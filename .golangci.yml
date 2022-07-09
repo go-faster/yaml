@@ -33,6 +33,8 @@ linters-settings:
       - appendAssign
       - unnecessaryBlock
       - redundantSprint
+      - ptrToRefParam
+      - typeDefFirst
 
 linters:
   disable-all: true
@@ -89,17 +91,8 @@ issues:
         - gocognit
         - scopelint
         - lll
-
     - path: _test\.go
-      text: "Combine"
-      linters:
-        - gocritic
-
-    # Check that equal to self is true
-    - linters: [gocritic]
-      source: '(assert|require).+Equal'
-      text: 'dupArg'
-      path: _test\.go
+      text: 'structtag: struct field tag .* bad syntax for struct tag pair'
 
     # Ignore shadowing of err.
     - linters: [ govet ]
@@ -108,4 +101,34 @@ issues:
     # Ignore linters in main packages.
     - path: main\.go
       linters: [ goconst, funlen, gocognit, gocyclo ]
+
+    - text: 'exported: exported .+ should have comment.*or be unexported'
+      linters: [ revive ]
+
+    - path: encode\.go
+      text: 'shadow: declaration of "tail" shadows declaration'
+      source: 'var tail string'
+
+    # Disable some linters for translated C code.
+    - path: (apic|writerc|emitterc|parserc|scannerc|readerc|yamlh|yamlprivateh)\.go
+      linters: [ whitespace, deadcode, varcheck, ineffassign ]
+    - path: (apic|writerc|emitterc|parserc|scannerc|readerc|yamlh|yamlprivateh)\.go
+      linters: [ revive ]
+      text: "(var-naming: don't use underscores|increment-decrement:|indent-error-flow:)"
+    # More precise matching:
+    - path: apic\.go
+      linters: [ gocritic ]
+      text: "commentFormatting"
+    - path: emitterc\.go
+      linters: [ gocritic ]
+      text: "(elseIf|ifElseChain)"
+    - path: parserc\.go
+      linters: [ govet, gocritic ]
+      text: "(shadow|ifElseChain)"
+    - path: scannerc\.go
+      linters: [ gocritic ]
+      text: "(elseIf|ifElseChain|boolExprSimplify|commentFormatting|appendCombine)"
+    - path: readerc\.go
+      linters: [ gocritic ]
+      text: "(ifElseChain|paramTypeCombine)"
 
