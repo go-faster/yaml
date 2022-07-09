@@ -1,5 +1,10 @@
-module "gopkg.in/yaml.v3"
+module gopkg.in/yaml.v3
+
+go 1.18
 
 require (
-	"gopkg.in/check.v1" v0.0.0-20161208181325-20d25e280405
+	go.uber.org/multierr v1.8.0
+	gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405
 )
+
+require go.uber.org/atomic v1.7.0 // indirect
