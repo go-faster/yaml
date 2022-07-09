@@ -498,9 +498,9 @@ type fieldInfo struct {
 	Num       int
 	OmitEmpty bool
 	Flow      bool
-	// Id holds the unique field identifier, so we can cheaply
+	// ID holds the unique field identifier, so we can cheaply
 	// check for field duplicates without maintaining an extra map.
-	Id int
+	ID int
 
 	// Inline holds the field index if the field is part of an inlined struct.
 	Inline []int
@@ -558,7 +558,7 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 				case "inline":
 					inline = true
 				default:
-					return nil, errors.New(fmt.Sprintf("unsupported flag %q in tag %q of type %s", flag, tag, st))
+					return nil, fmt.Errorf("unsupported flag %q in tag %q of type %s", flag, tag, st)
 				}
 			}
 			tag = fields[0]
@@ -602,7 +602,7 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 						} else {
 							finfo.Inline = append([]int{i}, finfo.Inline...)
 						}
-						finfo.Id = len(fieldsList)
+						finfo.ID = len(fieldsList)
 						fieldsMap[finfo.Key] = finfo
 						fieldsList = append(fieldsList, finfo)
 					}
@@ -624,7 +624,7 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 			return nil, errors.New(msg)
 		}
 
-		info.Id = len(fieldsList)
+		info.ID = len(fieldsList)
 		fieldsList = append(fieldsList, info)
 		fieldsMap[info.Key] = info
 	}

@@ -2616,16 +2616,16 @@ func deepCopyNode(node *yaml.Node, cache map[*yaml.Node]*yaml.Node) *yaml.Node {
 	if cache == nil {
 		cache = make(map[*yaml.Node]*yaml.Node)
 	}
-	copy := *node
-	cache[node] = &copy
-	copy.Content = nil
+	cpy := *node
+	cache[node] = &cpy
+	cpy.Content = nil
 	for _, elem := range node.Content {
-		copy.Content = append(copy.Content, deepCopyNode(elem, cache))
+		cpy.Content = append(cpy.Content, deepCopyNode(elem, cache))
 	}
 	if node.Alias != nil {
-		copy.Alias = deepCopyNode(node.Alias, cache)
+		cpy.Alias = deepCopyNode(node.Alias, cache)
 	}
-	return &copy
+	return &cpy
 }
 
 var savedNodes = make(map[string]*yaml.Node)
@@ -2818,7 +2818,7 @@ func (s *S) TestNodeZeroEncodeDecode(c *C) {
 	c.Assert(string(data), Equals, "null\n")
 
 	// ... and decoding.
-	var v *struct{} = &struct{}{}
+	var v = &struct{}{}
 	c.Assert(n.Decode(&v), IsNil)
 	c.Assert(v, IsNil)
 

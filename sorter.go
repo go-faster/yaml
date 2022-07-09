@@ -66,9 +66,8 @@ func (l keyList) Less(i, j int) bool {
 		if al || bl {
 			if digits {
 				return al
-			} else {
-				return bl
 			}
+			return bl
 		}
 		var ai, bi int
 		var an, bn int64

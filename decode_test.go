@@ -221,7 +221,7 @@ var unmarshalTests = []struct {
 		map[string]int{"decimal": 685230},
 	},
 
-	//{"sexa: 190:20:30", map[string]interface{}{"sexa": 0}}, // Unsupported
+	// {"sexa: 190:20:30", map[string]interface{}{"sexa": 0}}, // Unsupported
 
 	// Nulls from spec
 	{
@@ -1194,28 +1194,28 @@ func (s *S) TestUnmarshalerWholeDocument(c *C) {
 	c.Assert(value["_"], DeepEquals, unmarshalerTests[0].value)
 }
 
-var failingErr = errors.New("failingErr")
+var errFailing = errors.New("errFailing")
 
 type failingUnmarshaler struct{}
 
 func (ft *failingUnmarshaler) UnmarshalYAML(node *yaml.Node) error {
-	return failingErr
+	return errFailing
 }
 
 func (s *S) TestUnmarshalerError(c *C) {
 	err := yaml.Unmarshal([]byte("a: b"), &failingUnmarshaler{})
-	c.Assert(err, Equals, failingErr)
+	c.Assert(err, Equals, errFailing)
 }
 
 type obsoleteFailingUnmarshaler struct{}
 
 func (ft *obsoleteFailingUnmarshaler) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	return failingErr
+	return errFailing
 }
 
 func (s *S) TestObsoleteUnmarshalerError(c *C) {
 	err := yaml.Unmarshal([]byte("a: b"), &obsoleteFailingUnmarshaler{})
-	c.Assert(err, Equals, failingErr)
+	c.Assert(err, Equals, errFailing)
 }
 
 type sliceUnmarshaler []int
@@ -1685,32 +1685,3 @@ func (s *S) TestFuzzCrashers(c *C) {
 		_ = yaml.Unmarshal([]byte(data), &v)
 	}
 }
-
-//var data []byte
-//func init() {
-//	var err error
-//	data, err = ioutil.ReadFile("/tmp/file.yaml")
-//	if err != nil {
-//		panic(err)
-//	}
-//}
-//
-//func (s *S) BenchmarkUnmarshal(c *C) {
-//	var err error
-//	for i := 0; i < c.N; i++ {
-//		var v map[string]interface{}
-//		err = yaml.Unmarshal(data, &v)
-//	}
-//	if err != nil {
-//		panic(err)
-//	}
-//}
-//
-//func (s *S) BenchmarkMarshal(c *C) {
-//	var v map[string]interface{}
-//	yaml.Unmarshal(data, &v)
-//	c.ResetTimer()
-//	for i := 0; i < c.N; i++ {
-//		yaml.Marshal(&v)
-//	}
-//}

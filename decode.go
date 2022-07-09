@@ -169,12 +169,13 @@ func (p *parser) parse() *Node {
 
 func (p *parser) node(kind Kind, defaultTag, tag, value string) *Node {
 	var style Style
-	if tag != "" && tag != "!" {
+	switch {
+	case tag != "" && tag != "!":
 		tag = shortTag(tag)
 		style = TaggedStyle
-	} else if defaultTag != "" {
+	case defaultTag != "":
 		tag = defaultTag
-	} else if kind == ScalarNode {
+	case kind == ScalarNode:
 		tag, _ = resolve("", value)
 	}
 	n := &Node{
@@ -334,8 +335,6 @@ var (
 	stringMapType  = reflect.TypeOf(map[string]interface{}{})
 	generalMapType = reflect.TypeOf(map[interface{}]interface{}{})
 	ifaceType      = generalMapType.Elem()
-	timeType       = reflect.TypeOf(time.Time{})
-	ptrTimeType    = reflect.TypeOf(&time.Time{})
 )
 
 func newDecoder() *decoder {
@@ -915,14 +914,16 @@ func (d *decoder) mappingStruct(n *Node, out reflect.Value) (good bool) {
 			}
 			mergedFields[sname] = true
 		}
-		if info, ok := sinfo.FieldsMap[sname]; ok {
+
+		switch info, ok := sinfo.FieldsMap[sname]; {
+		case ok:
 			if d.uniqueKeys {
-				if doneFields[info.Id] {
+				if doneFields[info.ID] {
 					// TODO(tdakkota): find second occurrence?
 					d.terrors = append(d.terrors, duplicateKeyErr(ni, nil, out.Type()))
 					continue
 				}
-				doneFields[info.Id] = true
+				doneFields[info.ID] = true
 			}
 			var field reflect.Value
 			if info.Inline == nil {
@@ -931,14 +932,14 @@ func (d *decoder) mappingStruct(n *Node, out reflect.Value) (good bool) {
 				field = d.fieldByIndex(n, out, info.Inline)
 			}
 			d.unmarshal(n.Content[i+1], field)
-		} else if sinfo.InlineMap != -1 {
+		case sinfo.InlineMap != -1:
 			if inlineMap.IsNil() {
 				inlineMap.Set(reflect.MakeMap(inlineMap.Type()))
 			}
 			value := reflect.New(elemType).Elem()
 			d.unmarshal(n.Content[i+1], value)
 			inlineMap.SetMapIndex(name, value)
-		} else if d.knownFields {
+		case d.knownFields:
 			d.terrors = append(d.terrors, unknownFieldErr(name.String(), ni, out.Type()))
 		}
 	}
@@ -954,7 +955,7 @@ func failWantMap(merge *Node, typ reflect.Type) {
 	fail(unmarshalErr(merge, typ, "map merge requires map or sequence of maps as the value"))
 }
 
-func (d *decoder) merge(parent *Node, merge *Node, out reflect.Value) {
+func (d *decoder) merge(parent, merge *Node, out reflect.Value) {
 	mergedFields := d.mergedFields
 	if mergedFields == nil {
 		d.mergedFields = make(map[interface{}]bool)

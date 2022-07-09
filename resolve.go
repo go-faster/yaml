@@ -128,7 +128,7 @@ func resolvableTag(tag string) bool {
 
 var yamlStyleFloat = regexp.MustCompile(`^[-+]?(\.\d+|\d+(\.\d*)?)([eE][-+]?\d+)?$`)
 
-func resolve(tag string, in string) (rtag string, out interface{}) {
+func resolve(tag, in string) (rtag string, out interface{}) {
 	tag = shortTag(tag)
 	if !resolvableTag(tag) {
 		return tag, in
@@ -193,14 +193,13 @@ func resolve(tag string, in string) (rtag string, out interface{}) {
 				}
 			}
 
-			plain := strings.Replace(in, "_", "", -1)
+			plain := strings.ReplaceAll(in, "_", "")
 			intv, err := strconv.ParseInt(plain, 0, 64)
 			if err == nil {
 				if intv == int64(int(intv)) {
 					return intTag, int(intv)
-				} else {
-					return intTag, intv
 				}
+				return intTag, intv
 			}
 			uintv, err := strconv.ParseUint(plain, 0, 64)
 			if err == nil {
@@ -217,9 +216,8 @@ func resolve(tag string, in string) (rtag string, out interface{}) {
 				if err == nil {
 					if intv == int64(int(intv)) {
 						return intTag, int(intv)
-					} else {
-						return intTag, intv
 					}
+					return intTag, intv
 				}
 				uintv, err := strconv.ParseUint(plain[2:], 2, 64)
 				if err == nil {
@@ -230,9 +228,8 @@ func resolve(tag string, in string) (rtag string, out interface{}) {
 				if err == nil {
 					if true || intv == int64(int(intv)) {
 						return intTag, int(intv)
-					} else {
-						return intTag, intv
 					}
+					return intTag, intv
 				}
 			}
 			// Octals as introduced in version 1.2 of the spec.
@@ -244,9 +241,8 @@ func resolve(tag string, in string) (rtag string, out interface{}) {
 				if err == nil {
 					if intv == int64(int(intv)) {
 						return intTag, int(intv)
-					} else {
-						return intTag, intv
 					}
+					return intTag, intv
 				}
 				uintv, err := strconv.ParseUint(plain[2:], 8, 64)
 				if err == nil {
@@ -257,9 +253,8 @@ func resolve(tag string, in string) (rtag string, out interface{}) {
 				if err == nil {
 					if true || intv == int64(int(intv)) {
 						return intTag, int(intv)
-					} else {
-						return intTag, intv
 					}
+					return intTag, intv
 				}
 			}
 		default:

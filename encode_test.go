@@ -679,7 +679,7 @@ func (s *S) TestMarshaler(c *C) {
 		obj.Field.value = item.value
 		data, err := yaml.Marshal(obj)
 		c.Assert(err, IsNil)
-		c.Assert(string(data), Equals, string(item.data))
+		c.Assert(string(data), Equals, item.data)
 	}
 }
 
@@ -694,12 +694,12 @@ func (s *S) TestMarshalerWholeDocument(c *C) {
 type failingMarshaler struct{}
 
 func (ft *failingMarshaler) MarshalYAML() (interface{}, error) {
-	return nil, failingErr
+	return nil, errFailing
 }
 
 func (s *S) TestMarshalerError(c *C) {
 	_, err := yaml.Marshal(&failingMarshaler{})
-	c.Assert(err, Equals, failingErr)
+	c.Assert(err, Equals, errFailing)
 }
 
 func (s *S) TestSetIndent(c *C) {
