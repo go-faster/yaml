@@ -22,6 +22,7 @@ import (
 	"io"
 	"math"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -214,7 +215,13 @@ var unmarshalTests = []struct {
 	},
 	{
 		"bin: -0b1000000000000000000000000000000000000000000000000000000000000000",
-		map[string]interface{}{"bin": -9223372036854775808},
+		map[string]interface{}{"bin": func() interface{} {
+			val := int64(-9223372036854775808)
+			if strconv.IntSize == 64 {
+				return int(val)
+			}
+			return val
+		}()},
 	},
 	{
 		"decimal: +685_230",
