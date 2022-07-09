@@ -126,7 +126,7 @@ func resolvableTag(tag string) bool {
 	return false
 }
 
-var yamlStyleFloat = regexp.MustCompile(`^[-+]?(\.[0-9]+|[0-9]+(\.[0-9]*)?)([eE][-+]?[0-9]+)?$`)
+var yamlStyleFloat = regexp.MustCompile(`^[-+]?(\.\d+|\d+(\.\d*)?)([eE][-+]?\d+)?$`)
 
 func resolve(tag string, in string) (rtag string, out interface{}) {
 	tag = shortTag(tag)

@@ -304,7 +304,7 @@ func isBase60Float(s string) (result bool) {
 
 // From http://yaml.org/type/float.html, except the regular expression there
 // is bogus. In practice parsers do not enforce the "\.[0-9_]*" suffix.
-var base60float = regexp.MustCompile(`^[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+(?:\.[0-9_]*)?$`)
+var base60float = regexp.MustCompile(`^[-+]?\d[\d_]*(?::[0-5]?\d)+(?:\.[\d_]*)?$`)
 
 // isOldBool returns whether s is bool notation as defined in YAML 1.1.
 //
