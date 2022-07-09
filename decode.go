@@ -458,29 +458,29 @@ func (d *decoder) fieldByIndex(n *Node, v reflect.Value, index []int) (field ref
 const (
 	// 400,000 decode operations is ~500kb of dense object declarations, or
 	// ~5kb of dense object declarations with 10000% alias expansion
-	alias_ratio_range_low = 400000
+	aliasRatioRangeLow = 400000
 
 	// 4,000,000 decode operations is ~5MB of dense object declarations, or
 	// ~4.5MB of dense object declarations with 10% alias expansion
-	alias_ratio_range_high = 4000000
+	aliasRatioRangeHigh = 4000000
 
-	// alias_ratio_range is the range over which we scale allowed alias ratios
-	alias_ratio_range = float64(alias_ratio_range_high - alias_ratio_range_low)
+	// aliasRatioRange is the range over which we scale allowed alias ratios
+	aliasRatioRange = float64(aliasRatioRangeHigh - aliasRatioRangeLow)
 )
 
 func allowedAliasRatio(decodeCount int) float64 {
 	switch {
-	case decodeCount <= alias_ratio_range_low:
+	case decodeCount <= aliasRatioRangeLow:
 		// allow 99% to come from alias expansion for small-to-medium documents
 		return 0.99
-	case decodeCount >= alias_ratio_range_high:
+	case decodeCount >= aliasRatioRangeHigh:
 		// allow 10% to come from alias expansion for very large documents
 		return 0.10
 	default:
 		// scale smoothly from 99% down to 10% over the range.
 		// this maps to 396,000 - 400,000 allowed alias-driven decodes over the range.
 		// 400,000 decode operations is ~100MB of allocations in worst-case scenarios (single-item maps).
-		return 0.99 - 0.89*(float64(decodeCount-alias_ratio_range_low)/alias_ratio_range)
+		return 0.99 - 0.89*(float64(decodeCount-aliasRatioRangeLow)/aliasRatioRange)
 	}
 }
 
