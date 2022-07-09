@@ -403,8 +403,8 @@ func (d *decoder) callObsoleteUnmarshaler(n *Node, u obsoleteUnmarshaler) (good 
 // d.prepare initializes and dereferences pointers and calls UnmarshalYAML
 // if a value is found to implement it.
 // It returns the initialized and dereferenced out value, whether
-// unmarshalling was already done by UnmarshalYAML, and if so whether
-// its types unmarshalled appropriately.
+// unmarshaling was already done by UnmarshalYAML, and if so whether
+// its types unmarshaled appropriately.
 //
 // If n holds a null value, prepare returns before doing anything.
 func (d *decoder) prepare(n *Node, out reflect.Value) (newout reflect.Value, unmarshaled, good bool) {

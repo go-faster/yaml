@@ -937,7 +937,7 @@ func (s *S) TestDecoderSingleDocument(c *C) {
 	for i, item := range unmarshalTests {
 		c.Logf("test %d: %q", i, item.data)
 		if item.data == "" {
-			// Behaviour differs when there's no YAML.
+			// Behavior differs when there's no YAML.
 			continue
 		}
 		t := reflect.ValueOf(item.value).Type()
@@ -1430,7 +1430,7 @@ func (s *S) TestMergeNestedStruct(c *C) {
 	//
 	// Quick summary of the fields:
 	//
-	// - A must come from outer and not overriden
+	// - A must come from outer and not overridden
 	// - B must not be set as its in the ignored merge
 	// - C should still be set as it's preset in the value
 	// - D should be set from the recursive merge

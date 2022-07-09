@@ -58,7 +58,7 @@ type Marshaler interface {
 //
 // Maps and pointers (to a struct, string, int, etc) are accepted as out
 // values. If an internal pointer within a struct is not initialized,
-// the yaml package will initialize it if necessary for unmarshalling
+// the yaml package will initialize it if necessary for unmarshaling
 // the provided data. The out parameter must not be nil.
 //
 // The type of the decoded values should be compatible with the respective
@@ -67,12 +67,12 @@ type Marshaler interface {
 // content, and a *yaml.TypeError is returned with details for all
 // missed values.
 //
-// Struct fields are only unmarshalled if they are exported (have an
-// upper case first letter), and are unmarshalled using the field name
+// Struct fields are only unmarshaled if they are exported (have an
+// upper case first letter), and are unmarshaled using the field name
 // lowercased as the default key. Custom keys may be defined via the
 // "yaml" name in the field tag: the content preceding the first comma
 // is used as the key, and the following comma-separated options are
-// used to tweak the marshalling process (see Marshal).
+// used to tweak the marshaling process (see Marshal).
 // Conflicting names result in a runtime error.
 //
 // For example:
@@ -184,11 +184,11 @@ func unmarshal(in []byte, out interface{}, strict bool) (err error) {
 // of the generated document will reflect the structure of the value itself.
 // Maps and pointers (to struct, string, int, etc) are accepted as the in value.
 //
-// Struct fields are only marshalled if they are exported (have an upper case
-// first letter), and are marshalled using the field name lowercased as the
+// Struct fields are only marshaled if they are exported (have an upper case
+// first letter), and are marshaled using the field name lowercased as the
 // default key. Custom keys may be defined via the "yaml" name in the field
 // tag: the content preceding the first comma is used as the key, and the
-// following comma-separated options are used to tweak the marshalling process.
+// following comma-separated options are used to tweak the marshaling process.
 // Conflicting names result in a runtime error.
 //
 // The field tag format accepted is:
@@ -367,7 +367,7 @@ type Node struct {
 	// scalar nodes may be obtained via the ShortTag and LongTag methods.
 	Kind Kind
 
-	// Style allows customizing the apperance of the node in the tree.
+	// Style allows customizing the appearance of the node in the tree.
 	Style Style
 
 	// Tag holds the YAML tag defining the data type for the value.
@@ -379,7 +379,7 @@ type Node struct {
 	// the implicit tag diverges from the provided one.
 	Tag string
 
-	// Value holds the unescaped and unquoted represenation of the value.
+	// Value holds the unescaped and unquoted representation of the value.
 	Value string
 
 	// Anchor holds the anchor name for this node, which allows aliases to point to it.

@@ -29,7 +29,7 @@ Specifically, as of v3 of the yaml package:
 and offers backwards
 compatibility with YAML 1.1 in some cases.
 1.2, including support for
-anchors, tags, map merging, etc. Multi-document unmarshalling is not yet
+anchors, tags, map merging, etc. Multi-document unmarshaling is not yet
 implemented, and base-60 floats from YAML 1.1 are purposefully not
 supported since they're a poor design and are gone in YAML 1.2.
 
@@ -94,27 +94,27 @@ type T struct {
 
 func main() {
         t := T{}
-    
+
         err := yaml.Unmarshal([]byte(data), &t)
         if err != nil {
                 log.Fatalf("error: %v", err)
         }
         fmt.Printf("--- t:\n%v\n\n", t)
-    
+
         d, err := yaml.Marshal(&t)
         if err != nil {
                 log.Fatalf("error: %v", err)
         }
         fmt.Printf("--- t dump:\n%s\n\n", string(d))
-    
+
         m := make(map[interface{}]interface{})
-    
+
         err = yaml.Unmarshal([]byte(data), &m)
         if err != nil {
                 log.Fatalf("error: %v", err)
         }
         fmt.Printf("--- m:\n%v\n\n", m)
-    
+
         d, err = yaml.Marshal(&m)
         if err != nil {
                 log.Fatalf("error: %v", err)
