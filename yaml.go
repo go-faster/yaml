@@ -585,15 +585,15 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 				if reflect.PtrTo(ftype).Implements(unmarshalerType) {
 					inlineUnmarshalers = append(inlineUnmarshalers, []int{i})
 				} else {
-					sinfo, err := getStructInfo(ftype)
+					si, err := getStructInfo(ftype)
 					if err != nil {
 						return nil, err
 					}
-					for _, index := range sinfo.InlineUnmarshalers {
+					for _, index := range si.InlineUnmarshalers {
 						inlineUnmarshalers = append(inlineUnmarshalers, append([]int{i}, index...))
 					}
-					for _, finfo := range sinfo.FieldsList {
-						if _, found := fieldsMap[finfo.Key]; found {
+					for _, finfo := range si.FieldsList {
+						if _, ok := fieldsMap[finfo.Key]; ok {
 							msg := "duplicated key '" + finfo.Key + "' in struct " + st.String()
 							return nil, errors.New(msg)
 						}
