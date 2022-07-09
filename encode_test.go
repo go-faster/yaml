@@ -19,14 +19,14 @@ import (
 	"bytes"
 	"fmt"
 	"math"
+	"net"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"net"
-	"os"
-
 	. "gopkg.in/check.v1"
+
 	"gopkg.in/yaml.v3"
 )
 
@@ -39,91 +39,120 @@ var marshalTests = []struct {
 	{
 		nil,
 		"null\n",
-	}, {
+	},
+	{
 		(*marshalerType)(nil),
 		"null\n",
-	}, {
+	},
+	{
 		&struct{}{},
 		"{}\n",
-	}, {
+	},
+	{
 		map[string]string{"v": "hi"},
 		"v: hi\n",
-	}, {
+	},
+	{
 		map[string]interface{}{"v": "hi"},
 		"v: hi\n",
-	}, {
+	},
+	{
 		map[string]string{"v": "true"},
 		"v: \"true\"\n",
-	}, {
+	},
+	{
 		map[string]string{"v": "false"},
 		"v: \"false\"\n",
-	}, {
+	},
+	{
 		map[string]interface{}{"v": true},
 		"v: true\n",
-	}, {
+	},
+	{
 		map[string]interface{}{"v": false},
 		"v: false\n",
-	}, {
+	},
+	{
 		map[string]interface{}{"v": 10},
 		"v: 10\n",
-	}, {
+	},
+	{
 		map[string]interface{}{"v": -10},
 		"v: -10\n",
-	}, {
+	},
+	{
 		map[string]uint{"v": 42},
 		"v: 42\n",
-	}, {
+	},
+	{
 		map[string]interface{}{"v": int64(4294967296)},
 		"v: 4294967296\n",
-	}, {
+	},
+	{
 		map[string]int64{"v": int64(4294967296)},
 		"v: 4294967296\n",
-	}, {
+	},
+	{
 		map[string]uint64{"v": 4294967296},
 		"v: 4294967296\n",
-	}, {
+	},
+	{
 		map[string]interface{}{"v": "10"},
 		"v: \"10\"\n",
-	}, {
+	},
+	{
 		map[string]interface{}{"v": 0.1},
 		"v: 0.1\n",
-	}, {
+	},
+	{
 		map[string]interface{}{"v": float64(0.1)},
 		"v: 0.1\n",
-	}, {
+	},
+	{
 		map[string]interface{}{"v": float32(0.99)},
 		"v: 0.99\n",
-	}, {
+	},
+	{
 		map[string]interface{}{"v": -0.1},
 		"v: -0.1\n",
-	}, {
+	},
+	{
 		map[string]interface{}{"v": math.Inf(+1)},
 		"v: .inf\n",
-	}, {
+	},
+	{
 		map[string]interface{}{"v": math.Inf(-1)},
 		"v: -.inf\n",
-	}, {
+	},
+	{
 		map[string]interface{}{"v": math.NaN()},
 		"v: .nan\n",
-	}, {
+	},
+	{
 		map[string]interface{}{"v": nil},
 		"v: null\n",
-	}, {
+	},
+	{
 		map[string]interface{}{"v": ""},
 		"v: \"\"\n",
-	}, {
-		map[string][]string{"v": []string{"A", "B"}},
+	},
+	{
+		map[string][]string{"v": {"A", "B"}},
 		"v:\n    - A\n    - B\n",
-	}, {
-		map[string][]string{"v": []string{"A", "B\nC"}},
+	},
+	{
+		map[string][]string{"v": {"A", "B\nC"}},
 		"v:\n    - A\n    - |-\n      B\n      C\n",
-	}, {
-		map[string][]interface{}{"v": []interface{}{"A", 1, map[string][]int{"B": []int{2, 3}}}},
+	},
+	{
+		map[string][]interface{}{"v": {"A", 1, map[string][]int{"B": {2, 3}}}},
 		"v:\n    - A\n    - 1\n    - B:\n        - 2\n        - 3\n",
-	}, {
+	},
+	{
 		map[string]interface{}{"a": map[interface{}]interface{}{"b": "c"}},
 		"a:\n    b: c\n",
-	}, {
+	},
+	{
 		map[string]interface{}{"a": "-"},
 		"a: '-'\n",
 	},
@@ -138,48 +167,58 @@ var marshalTests = []struct {
 	{
 		&struct{ Hello string }{"world"},
 		"hello: world\n",
-	}, {
+	},
+	{
 		&struct {
 			A struct {
 				B string
 			}
 		}{struct{ B string }{"c"}},
 		"a:\n    b: c\n",
-	}, {
+	},
+	{
 		&struct {
 			A *struct {
 				B string
 			}
 		}{&struct{ B string }{"c"}},
 		"a:\n    b: c\n",
-	}, {
+	},
+	{
 		&struct {
 			A *struct {
 				B string
 			}
 		}{},
 		"a: null\n",
-	}, {
+	},
+	{
 		&struct{ A int }{1},
 		"a: 1\n",
-	}, {
+	},
+	{
 		&struct{ A []int }{[]int{1, 2}},
 		"a:\n    - 1\n    - 2\n",
-	}, {
+	},
+	{
 		&struct{ A [2]int }{[2]int{1, 2}},
 		"a:\n    - 1\n    - 2\n",
-	}, {
+	},
+	{
 		&struct {
 			B int "a"
 		}{1},
 		"a: 1\n",
-	}, {
+	},
+	{
 		&struct{ A bool }{true},
 		"a: true\n",
-	}, {
+	},
+	{
 		&struct{ A string }{"true"},
 		"a: \"true\"\n",
-	}, {
+	},
+	{
 		&struct{ A string }{"off"},
 		"a: \"off\"\n",
 	},
@@ -191,38 +230,45 @@ var marshalTests = []struct {
 			B int "b,omitempty"
 		}{1, 0},
 		"a: 1\n",
-	}, {
+	},
+	{
 		&struct {
 			A int "a,omitempty"
 			B int "b,omitempty"
 		}{0, 0},
 		"{}\n",
-	}, {
+	},
+	{
 		&struct {
 			A *struct{ X, y int } "a,omitempty,flow"
 		}{&struct{ X, y int }{1, 2}},
 		"a: {x: 1}\n",
-	}, {
+	},
+	{
 		&struct {
 			A *struct{ X, y int } "a,omitempty,flow"
 		}{nil},
 		"{}\n",
-	}, {
+	},
+	{
 		&struct {
 			A *struct{ X, y int } "a,omitempty,flow"
 		}{&struct{ X, y int }{}},
 		"a: {x: 0}\n",
-	}, {
+	},
+	{
 		&struct {
 			A struct{ X, y int } "a,omitempty,flow"
 		}{struct{ X, y int }{1, 2}},
 		"a: {x: 1}\n",
-	}, {
+	},
+	{
 		&struct {
 			A struct{ X, y int } "a,omitempty,flow"
 		}{struct{ X, y int }{0, 1}},
 		"{}\n",
-	}, {
+	},
+	{
 		&struct {
 			A float64 "a,omitempty"
 			B float64 "b,omitempty"
@@ -255,19 +301,22 @@ var marshalTests = []struct {
 			A []int "a,flow"
 		}{[]int{1, 2}},
 		"a: [1, 2]\n",
-	}, {
+	},
+	{
 		&struct {
 			A map[string]string "a,flow"
 		}{map[string]string{"b": "c", "d": "e"}},
 		"a: {b: c, d: e}\n",
-	}, {
+	},
+	{
 		&struct {
 			A struct {
 				B, D string
 			} "a,flow"
 		}{struct{ B, D string }{"c", "e"}},
 		"a: {b: c, d: e}\n",
-	}, {
+	},
+	{
 		&struct {
 			A string "a,flow"
 		}{"b\nc"},
@@ -307,13 +356,15 @@ var marshalTests = []struct {
 			C *inlineB `yaml:",inline"`
 		}{1, &inlineB{2, inlineC{3}}},
 		"a: 1\nb: 2\nc: 3\n",
-	}, {
+	},
+	{
 		&struct {
 			A int
 			C *inlineB `yaml:",inline"`
 		}{1, nil},
 		"a: 1\n",
-	}, {
+	},
+	{
 		&struct {
 			A int
 			D *inlineD `yaml:",inline"`
@@ -353,10 +404,12 @@ var marshalTests = []struct {
 	{
 		map[string]string{"a": "\x00"},
 		"a: \"\\0\"\n",
-	}, {
+	},
+	{
 		map[string]string{"a": "\x80\x81\x82"},
 		"a: !!binary gIGC\n",
-	}, {
+	},
+	{
 		map[string]string{"a": strings.Repeat("\x90", 54)},
 		"a: !!binary |\n    " + strings.Repeat("kJCQ", 17) + "kJ\n    CQ\n",
 	},
@@ -412,7 +465,8 @@ var marshalTests = []struct {
 	{
 		&marshalerType{marshalerType{true}},
 		"true\n",
-	}, {
+	},
+	{
 		&marshalerType{&marshalerType{true}},
 		"true\n",
 	},
@@ -448,7 +502,8 @@ var marshalTests = []struct {
 			},
 		},
 		"value: 'foo'\n",
-	}, {
+	},
+	{
 		yaml.Node{
 			Kind:  yaml.ScalarNode,
 			Tag:   "!!str",
@@ -471,7 +526,8 @@ var marshalTests = []struct {
 			},
 		},
 		"value: !!str foo\n",
-	}, {
+	},
+	{
 		&struct {
 			Value yaml.Node
 		}{
@@ -482,7 +538,8 @@ var marshalTests = []struct {
 			},
 		},
 		"value: !!map {}\n",
-	}, {
+	},
+	{
 		&struct {
 			Value yaml.Node
 		}{

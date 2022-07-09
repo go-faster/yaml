@@ -506,9 +506,11 @@ type fieldInfo struct {
 	Inline []int
 }
 
-var structMap = make(map[reflect.Type]*structInfo)
-var fieldMapMutex sync.RWMutex
-var unmarshalerType reflect.Type
+var (
+	structMap       = make(map[reflect.Type]*structInfo)
+	fieldMapMutex   sync.RWMutex
+	unmarshalerType reflect.Type
+)
 
 func init() {
 	var v Unmarshaler
@@ -537,7 +539,7 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 		info := fieldInfo{Num: i}
 
 		tag := field.Tag.Get("yaml")
-		if tag == "" && strings.Index(string(field.Tag), ":") < 0 {
+		if tag == "" && strings.IndexByte(string(field.Tag), ':') < 0 {
 			tag = string(field.Tag)
 		}
 		if tag == "-" {
@@ -658,7 +660,7 @@ func isZero(v reflect.Value) bool {
 	}
 	switch kind {
 	case reflect.String:
-		return len(v.String()) == 0
+		return v.String() == ""
 	case reflect.Interface, reflect.Ptr:
 		return v.IsNil()
 	case reflect.Slice:
