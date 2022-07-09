@@ -17,6 +17,7 @@ package yaml
 
 import (
 	"encoding/base64"
+	"fmt"
 	"math"
 	"regexp"
 	"strconv"
@@ -147,7 +148,7 @@ func resolve(tag string, in string) (rtag string, out interface{}) {
 				}
 			}
 		}
-		failf("cannot decode %s `%s` as a %s", shortTag(rtag), in, shortTag(tag))
+		fail(&MarshalError{Msg: fmt.Sprintf("cannot decode %s `%s` as a %s", shortTag(rtag), in, shortTag(tag))})
 	}()
 
 	// Any data is accepted as a !!str or !!binary.

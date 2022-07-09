@@ -87,7 +87,7 @@ func (e *encoder) must(ok bool) {
 		if msg == "" {
 			msg = "unknown problem generating YAML content"
 		}
-		failf("%s", msg)
+		fail(&MarshalError{Msg: msg})
 	}
 }
 
@@ -328,10 +328,10 @@ func (e *encoder) stringv(tag string, in reflect.Value) {
 	switch {
 	case !utf8.ValidString(s):
 		if tag == binaryTag {
-			failf("explicitly tagged !!binary data must be base64-encoded")
+			fail(&MarshalError{Msg: "explicitly tagged !!binary data must be base64-encoded"})
 		}
 		if tag != "" {
-			failf("cannot marshal invalid UTF-8 data as %s", shortTag(tag))
+			fail(&MarshalError{Msg: fmt.Sprintf("cannot marshal invalid UTF-8 data as %s", shortTag(tag))})
 		}
 		// It can't be encoded directly as YAML so use a binary tag
 		// and encode it as base64.
@@ -543,10 +543,10 @@ func (e *encoder) node(node *Node, tail string) {
 		value := node.Value
 		if !utf8.ValidString(value) {
 			if stag == binaryTag {
-				failf("explicitly tagged !!binary data must be base64-encoded")
+				fail(&MarshalError{Msg: "explicitly tagged !!binary data must be base64-encoded"})
 			}
 			if stag != "" {
-				failf("cannot marshal invalid UTF-8 data as %s", stag)
+				fail(&MarshalError{Msg: fmt.Sprintf("cannot marshal invalid UTF-8 data as %s", stag)})
 			}
 			// It can't be encoded directly as YAML so use a binary tag
 			// and encode it as base64.
@@ -572,6 +572,6 @@ func (e *encoder) node(node *Node, tail string) {
 
 		e.emitScalar(value, node.Anchor, tag, style, []byte(node.HeadComment), []byte(node.LineComment), []byte(node.FootComment), []byte(tail))
 	default:
-		failf("cannot encode node with unknown kind %d", node.Kind)
+		fail(&MarshalError{Msg: fmt.Sprintf("cannot encode node with unknown kind %d", node.Kind)})
 	}
 }

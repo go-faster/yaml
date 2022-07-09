@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	. "gopkg.in/check.v1"
+
 	"gopkg.in/yaml.v3"
 )
 
@@ -16,7 +17,7 @@ var limitTests = []struct {
 	{
 		name:  "1000kb of maps with 100 aliases",
 		data:  []byte(`{a: &a [{a}` + strings.Repeat(`,{a}`, 1000*1024/4-100) + `], b: &b [*a` + strings.Repeat(`,*a`, 99) + `]}`),
-		error: "yaml: document contains excessive aliasing",
+		error: "yaml: line 1: document contains excessive aliasing",
 	}, {
 		name:  "1000kb of deeply nested slices",
 		data:  []byte(strings.Repeat(`[`, 1000*1024)),

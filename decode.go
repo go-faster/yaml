@@ -18,12 +18,14 @@ package yaml
 import (
 	"encoding"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"math"
 	"reflect"
-	"strconv"
 	"time"
+
+	"go.uber.org/multierr"
 )
 
 // ----------------------------------------------------------------------------
@@ -84,7 +86,8 @@ func (p *parser) expect(e yaml_event_type_t) {
 		}
 	}
 	if p.event.typ == yaml_STREAM_END_EVENT {
-		failf("attempted to go past the end of stream; corrupted value?")
+		p.parser.problem = "attempted to go past the end of stream; corrupted value?"
+		p.fail()
 	}
 	if p.event.typ != e {
 		p.parser.problem = fmt.Sprintf("expected %s event but got %s", e, p.event.typ)
@@ -110,7 +113,6 @@ func (p *parser) peek() yaml_event_type_t {
 }
 
 func (p *parser) fail() {
-	var where string
 	var line int
 	if p.parser.context_mark.line != 0 {
 		line = p.parser.context_mark.line
@@ -125,16 +127,14 @@ func (p *parser) fail() {
 			line++
 		}
 	}
-	if line != 0 {
-		where = "line " + strconv.Itoa(line) + ": "
-	}
 	var msg string
 	if len(p.parser.problem) > 0 {
 		msg = p.parser.problem
 	} else {
 		msg = "unknown problem parsing YAML content"
 	}
-	failf("%s%s", where, msg)
+
+	fail(syntaxErr(line, p.parser.offset, msg))
 }
 
 func (p *parser) anchor(n *Node, anchor []byte) {
@@ -215,7 +215,8 @@ func (p *parser) alias() *Node {
 	n := p.node(AliasNode, "", "", string(p.event.anchor))
 	n.Alias = p.anchors[n.Value]
 	if n.Alias == nil {
-		failf("unknown anchor '%s' referenced", n.Value)
+		// FIXME: is that right error type?
+		fail(unmarshalErr(n, nil, "unknown anchor %q referenced", n.Value))
 	}
 	p.expect(yaml_ALIAS_EVENT)
 	return n
@@ -313,7 +314,7 @@ func (p *parser) mapping() *Node {
 type decoder struct {
 	doc     *Node
 	aliases map[*Node]bool
-	terrors []string
+	terrors []error
 
 	stringMapType  reflect.Type
 	generalMapType reflect.Type
@@ -359,19 +360,27 @@ func (d *decoder) terror(n *Node, tag string, out reflect.Value) {
 			value = " `" + value + "`"
 		}
 	}
-	d.terrors = append(d.terrors, fmt.Sprintf("line %d: cannot unmarshal %s%s into %s", n.Line, shortTag(tag), value, out.Type()))
+
+	typ := out.Type()
+	d.terrors = append(d.terrors,
+		unmarshalErr(n, typ, "cannot unmarshal %s%s into %s", shortTag(tag), value, typ),
+	)
 }
 
-func (d *decoder) callUnmarshaler(n *Node, u Unmarshaler) (good bool) {
-	err := u.UnmarshalYAML(n)
-	if e, ok := err.(*TypeError); ok {
-		d.terrors = append(d.terrors, e.Errors...)
+func (d *decoder) mapCustomError(err error) bool {
+	var e *TypeError
+	if errors.As(err, &e) {
+		d.terrors = append(d.terrors, multierr.Errors(e.Group)...)
 		return false
 	}
 	if err != nil {
 		fail(err)
 	}
 	return true
+}
+
+func (d *decoder) callUnmarshaler(n *Node, u Unmarshaler) (good bool) {
+	return d.mapCustomError(u.UnmarshalYAML(n))
 }
 
 func (d *decoder) callObsoleteUnmarshaler(n *Node, u obsoleteUnmarshaler) (good bool) {
@@ -382,18 +391,13 @@ func (d *decoder) callObsoleteUnmarshaler(n *Node, u obsoleteUnmarshaler) (good 
 		if len(d.terrors) > terrlen {
 			issues := d.terrors[terrlen:]
 			d.terrors = d.terrors[:terrlen]
-			return &TypeError{issues}
+			return &TypeError{
+				Group: multierr.Combine(issues...),
+			}
 		}
 		return nil
 	})
-	if e, ok := err.(*TypeError); ok {
-		d.terrors = append(d.terrors, e.Errors...)
-		return false
-	}
-	if err != nil {
-		fail(err)
-	}
-	return true
+	return d.mapCustomError(err)
 }
 
 // d.prepare initializes and dereferences pointers and calls UnmarshalYAML
@@ -487,7 +491,7 @@ func (d *decoder) unmarshal(n *Node, out reflect.Value) (good bool) {
 		d.aliasCount++
 	}
 	if d.aliasCount > 100 && d.decodeCount > 1000 && float64(d.aliasCount)/float64(d.decodeCount) > allowedAliasRatio(d.decodeCount) {
-		failf("document contains excessive aliasing")
+		fail(unmarshalErr(n, out.Type(), "document contains excessive aliasing"))
 	}
 	if out.Type() == nodeType {
 		out.Set(reflect.ValueOf(n).Elem())
@@ -516,7 +520,7 @@ func (d *decoder) unmarshal(n *Node, out reflect.Value) (good bool) {
 		}
 		fallthrough
 	default:
-		failf("cannot decode node with unknown kind %d", n.Kind)
+		fail(unmarshalErr(n, out.Type(), "cannot decode node with unknown kind %d", n.Kind))
 	}
 	return good
 }
@@ -533,7 +537,7 @@ func (d *decoder) document(n *Node, out reflect.Value) (good bool) {
 func (d *decoder) alias(n *Node, out reflect.Value) (good bool) {
 	if d.aliases[n] {
 		// TODO this could actually be allowed in some circumstances.
-		failf("anchor '%s' value contains itself", n.Value)
+		fail(unmarshalErr(n, out.Type(), "anchor %q value contains itself", n.Value))
 	}
 	d.aliases[n] = true
 	d.aliasDepth++
@@ -573,7 +577,7 @@ func (d *decoder) scalar(n *Node, out reflect.Value) bool {
 		if tag == binaryTag {
 			data, err := base64.StdEncoding.DecodeString(resolved.(string))
 			if err != nil {
-				failf("!!binary value contains invalid base64 data")
+				fail(unmarshalErr(n, out.Type(), "decode !!binary: %w", err))
 			}
 			resolved = string(data)
 		}
@@ -735,7 +739,7 @@ func (d *decoder) sequence(n *Node, out reflect.Value) (good bool) {
 		out.Set(reflect.MakeSlice(out.Type(), l, l))
 	case reflect.Array:
 		if l != out.Len() {
-			failf("invalid array: want %d elements but got %d", out.Len(), l)
+			fail(unmarshalErr(n, out.Type(), "invalid array: want %d elements but got %d", out.Len(), l))
 		}
 	case reflect.Interface:
 		// No type hints. Will have to use a generic sequence.
@@ -773,7 +777,7 @@ func (d *decoder) mapping(n *Node, out reflect.Value) (good bool) {
 			for j := i + 2; j < l; j += 2 {
 				nj := n.Content[j]
 				if ni.Kind == nj.Kind && ni.Value == nj.Value {
-					d.terrors = append(d.terrors, fmt.Sprintf("line %d: mapping key %#v already defined at line %d", nj.Line, nj.Value, ni.Line))
+					d.terrors = append(d.terrors, duplicateKeyErr(nj, ni, out.Type()))
 				}
 			}
 		}
@@ -842,7 +846,8 @@ func (d *decoder) mapping(n *Node, out reflect.Value) (good bool) {
 				kkind = k.Elem().Kind()
 			}
 			if kkind == reflect.Map || kkind == reflect.Slice {
-				failf("invalid map key: %#v", k.Interface())
+				node := n.Content[i]
+				fail(unmarshalErr(node, out.Type(), "invalid map key: %#v", k.Interface()))
 			}
 			e := reflect.New(et).Elem()
 			if d.unmarshal(n.Content[i+1], e) || n.Content[i+1].ShortTag() == nullTag && (mapIsNew || !out.MapIndex(k).IsValid()) {
@@ -921,7 +926,8 @@ func (d *decoder) mappingStruct(n *Node, out reflect.Value) (good bool) {
 		if info, ok := sinfo.FieldsMap[sname]; ok {
 			if d.uniqueKeys {
 				if doneFields[info.Id] {
-					d.terrors = append(d.terrors, fmt.Sprintf("line %d: field %s already set in type %s", ni.Line, name.String(), out.Type()))
+					// TODO(tdakkota): find second occurrence?
+					d.terrors = append(d.terrors, duplicateKeyErr(ni, nil, out.Type()))
 					continue
 				}
 				doneFields[info.Id] = true
@@ -941,7 +947,7 @@ func (d *decoder) mappingStruct(n *Node, out reflect.Value) (good bool) {
 			d.unmarshal(n.Content[i+1], value)
 			inlineMap.SetMapIndex(name, value)
 		} else if d.knownFields {
-			d.terrors = append(d.terrors, fmt.Sprintf("line %d: field %s not found in type %s", ni.Line, name.String(), out.Type()))
+			d.terrors = append(d.terrors, unknownFieldErr(name.String(), ni, out.Type()))
 		}
 	}
 
@@ -952,8 +958,8 @@ func (d *decoder) mappingStruct(n *Node, out reflect.Value) (good bool) {
 	return true
 }
 
-func failWantMap() {
-	failf("map merge requires map or sequence of maps as the value")
+func failWantMap(merge *Node, typ reflect.Type) {
+	fail(unmarshalErr(merge, typ, "map merge requires map or sequence of maps as the value"))
 }
 
 func (d *decoder) merge(parent *Node, merge *Node, out reflect.Value) {
@@ -972,24 +978,24 @@ func (d *decoder) merge(parent *Node, merge *Node, out reflect.Value) {
 	case MappingNode:
 		d.unmarshal(merge, out)
 	case AliasNode:
-		if merge.Alias != nil && merge.Alias.Kind != MappingNode {
-			failWantMap()
+		if a := merge.Alias; a != nil && a.Kind != MappingNode {
+			failWantMap(a, out.Type())
 		}
 		d.unmarshal(merge, out)
 	case SequenceNode:
 		for i := 0; i < len(merge.Content); i++ {
 			ni := merge.Content[i]
 			if ni.Kind == AliasNode {
-				if ni.Alias != nil && ni.Alias.Kind != MappingNode {
-					failWantMap()
+				if a := ni.Alias; a != nil && a.Kind != MappingNode {
+					failWantMap(a, out.Type())
 				}
 			} else if ni.Kind != MappingNode {
-				failWantMap()
+				failWantMap(ni, out.Type())
 			}
 			d.unmarshal(ni, out)
 		}
 	default:
-		failWantMap()
+		failWantMap(merge, out.Type())
 	}
 
 	d.mergedFields = mergedFields

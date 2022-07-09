@@ -26,6 +26,7 @@ import (
 	"time"
 
 	. "gopkg.in/check.v1"
+
 	"gopkg.in/yaml.v3"
 )
 
@@ -937,17 +938,17 @@ var unmarshalErrorTests = []struct {
 	{"v: [A,", "yaml: line 1: did not find expected node content"},
 	{"v:\n- [A,", "yaml: line 2: did not find expected node content"},
 	{"a:\n- b: *,", "yaml: line 2: did not find expected alphabetic or numeric character"},
-	{"a: *b\n", "yaml: unknown anchor 'b' referenced"},
-	{"a: &a\n  b: *a\n", "yaml: anchor 'a' value contains itself"},
+	{"a: *b\n", "yaml: line 1: unknown anchor \"b\" referenced"},
+	{"a: &a\n  b: *a\n", "yaml: line 2: anchor \"a\" value contains itself"},
 	{"value: -", "yaml: block sequence entries are not allowed in this context"},
-	{"a: !!binary ==", "yaml: !!binary value contains invalid base64 data"},
-	{"{[.]}", `yaml: invalid map key: \[\]interface \{\}\{"\."\}`},
-	{"{{.}}", `yaml: invalid map key: map\[string]interface \{\}\{".":interface \{\}\(nil\)\}`},
-	{"b: *a\na: &a {c: 1}", `yaml: unknown anchor 'a' referenced`},
+	{"a: !!binary ==", "yaml: line 1: decode !!binary: illegal base64 data at input byte 0"},
+	{"{[.]}", `yaml: line 1: invalid map key: \[\]interface \{\}\{"\."\}`},
+	{"{{.}}", `yaml: line 1: invalid map key: map\[string]interface \{\}\{".":interface \{\}\(nil\)\}`},
+	{"b: *a\na: &a {c: 1}", `yaml: line 1: unknown anchor "a" referenced`},
 	{"%TAG !%79! tag:yaml.org,2002:\n---\nv: !%79!int '1'", "yaml: did not find expected whitespace"},
 	{"a:\n  1:\nb\n  2:", ".*could not find expected ':'"},
 	{"a: 1\nb: 2\nc 2\nd: 3\n", "^yaml: line 3: could not find expected ':'$"},
-	{"#\n-\n{", "yaml: line 3: could not find expected ':'"}, // Issue #665
+	{"#\n-\n{", "yaml: line 3: could not find expected ':'"},   // Issue #665
 	{"0: [:!00 \xef", "yaml: incomplete UTF-8 octet sequence"}, // Issue #666
 	{
 		"a: &a [00,00,00,00,00,00,00,00,00]\n" +
@@ -959,7 +960,7 @@ var unmarshalErrorTests = []struct {
 			"g: &g [*f,*f,*f,*f,*f,*f,*f,*f,*f]\n" +
 			"h: &h [*g,*g,*g,*g,*g,*g,*g,*g,*g]\n" +
 			"i: &i [*h,*h,*h,*h,*h,*h,*h,*h,*h]\n",
-		"yaml: document contains excessive aliasing",
+		"yaml: line 2: document contains excessive aliasing",
 	},
 }
 
@@ -1109,144 +1110,6 @@ func (s *S) TestUnmarshalerWholeDocument(c *C) {
 	value, ok := obj.value.(map[string]interface{})
 	c.Assert(ok, Equals, true, Commentf("value: %#v", obj.value))
 	c.Assert(value["_"], DeepEquals, unmarshalerTests[0].value)
-}
-
-func (s *S) TestUnmarshalerTypeError(c *C) {
-	unmarshalerResult[2] = &yaml.TypeError{[]string{"foo"}}
-	unmarshalerResult[4] = &yaml.TypeError{[]string{"bar"}}
-	defer func() {
-		delete(unmarshalerResult, 2)
-		delete(unmarshalerResult, 4)
-	}()
-
-	type T struct {
-		Before int
-		After  int
-		M      map[string]*unmarshalerType
-	}
-	var v T
-	data := `{before: A, m: {abc: 1, def: 2, ghi: 3, jkl: 4}, after: B}`
-	err := yaml.Unmarshal([]byte(data), &v)
-	c.Assert(err, ErrorMatches, ""+
-		"yaml: unmarshal errors:\n"+
-		"  line 1: cannot unmarshal !!str `A` into int\n"+
-		"  foo\n"+
-		"  bar\n"+
-		"  line 1: cannot unmarshal !!str `B` into int")
-	c.Assert(v.M["abc"], NotNil)
-	c.Assert(v.M["def"], IsNil)
-	c.Assert(v.M["ghi"], NotNil)
-	c.Assert(v.M["jkl"], IsNil)
-
-	c.Assert(v.M["abc"].value, Equals, 1)
-	c.Assert(v.M["ghi"].value, Equals, 3)
-}
-
-func (s *S) TestObsoleteUnmarshalerTypeError(c *C) {
-	unmarshalerResult[2] = &yaml.TypeError{[]string{"foo"}}
-	unmarshalerResult[4] = &yaml.TypeError{[]string{"bar"}}
-	defer func() {
-		delete(unmarshalerResult, 2)
-		delete(unmarshalerResult, 4)
-	}()
-
-	type T struct {
-		Before int
-		After  int
-		M      map[string]*obsoleteUnmarshalerType
-	}
-	var v T
-	data := `{before: A, m: {abc: 1, def: 2, ghi: 3, jkl: 4}, after: B}`
-	err := yaml.Unmarshal([]byte(data), &v)
-	c.Assert(err, ErrorMatches, ""+
-		"yaml: unmarshal errors:\n"+
-		"  line 1: cannot unmarshal !!str `A` into int\n"+
-		"  foo\n"+
-		"  bar\n"+
-		"  line 1: cannot unmarshal !!str `B` into int")
-	c.Assert(v.M["abc"], NotNil)
-	c.Assert(v.M["def"], IsNil)
-	c.Assert(v.M["ghi"], NotNil)
-	c.Assert(v.M["jkl"], IsNil)
-
-	c.Assert(v.M["abc"].value, Equals, 1)
-	c.Assert(v.M["ghi"].value, Equals, 3)
-}
-
-type proxyTypeError struct{}
-
-func (v *proxyTypeError) UnmarshalYAML(node *yaml.Node) error {
-	var s string
-	var a int32
-	var b int64
-	if err := node.Decode(&s); err != nil {
-		panic(err)
-	}
-	if s == "a" {
-		if err := node.Decode(&b); err == nil {
-			panic("should have failed")
-		}
-		return node.Decode(&a)
-	}
-	if err := node.Decode(&a); err == nil {
-		panic("should have failed")
-	}
-	return node.Decode(&b)
-}
-
-func (s *S) TestUnmarshalerTypeErrorProxying(c *C) {
-	type T struct {
-		Before int
-		After  int
-		M      map[string]*proxyTypeError
-	}
-	var v T
-	data := `{before: A, m: {abc: a, def: b}, after: B}`
-	err := yaml.Unmarshal([]byte(data), &v)
-	c.Assert(err, ErrorMatches, ""+
-		"yaml: unmarshal errors:\n"+
-		"  line 1: cannot unmarshal !!str `A` into int\n"+
-		"  line 1: cannot unmarshal !!str `a` into int32\n"+
-		"  line 1: cannot unmarshal !!str `b` into int64\n"+
-		"  line 1: cannot unmarshal !!str `B` into int")
-}
-
-type obsoleteProxyTypeError struct{}
-
-func (v *obsoleteProxyTypeError) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var s string
-	var a int32
-	var b int64
-	if err := unmarshal(&s); err != nil {
-		panic(err)
-	}
-	if s == "a" {
-		if err := unmarshal(&b); err == nil {
-			panic("should have failed")
-		}
-		return unmarshal(&a)
-	}
-	if err := unmarshal(&a); err == nil {
-		panic("should have failed")
-	}
-	return unmarshal(&b)
-}
-
-func (s *S) TestObsoleteUnmarshalerTypeErrorProxying(c *C) {
-	type T struct {
-		Before int
-		After  int
-		M      map[string]*obsoleteProxyTypeError
-	}
-	var v T
-	data := `{before: A, m: {abc: a, def: b}, after: B}`
-	err := yaml.Unmarshal([]byte(data), &v)
-	c.Assert(err, ErrorMatches, ""+
-		"yaml: unmarshal errors:\n"+
-		"  line 1: cannot unmarshal !!str `A` into int\n"+
-		"  line 1: cannot unmarshal !!str `a` into int32\n"+
-		"  line 1: cannot unmarshal !!str `b` into int64\n"+
-		"  line 1: cannot unmarshal !!str `B` into int")
 }
 
 var failingErr = errors.New("failingErr")
@@ -1482,7 +1345,7 @@ func (s *S) TestMergeNestedStruct(c *C) {
 	// 2) A simple implementation might attempt to handle the key skipping
 	//    directly by iterating over the merging map without recursion, but
 	//    there are more complex cases that require recursion.
-	// 
+	//
 	// Quick summary of the fields:
 	//
 	// - A must come from outer and not overriden
@@ -1498,7 +1361,7 @@ func (s *S) TestMergeNestedStruct(c *C) {
 		A, B, C int
 	}
 	type Outer struct {
-		D, E      int
+		D, E   int
 		Inner  Inner
 		Inline map[string]int `yaml:",inline"`
 	}
@@ -1516,10 +1379,10 @@ func (s *S) TestMergeNestedStruct(c *C) {
 	// Repeat test with a map.
 
 	var testm map[string]interface{}
-	var wantm = map[string]interface {} {
-		"f":     60,
+	var wantm = map[string]interface{}{
+		"f": 60,
 		"inner": map[string]interface{}{
-		    "a": 10,
+			"a": 10,
 		},
 		"d": 40,
 		"e": 50,
@@ -1618,12 +1481,12 @@ var unmarshalStrictTests = []struct {
 	known: true,
 	data:  "a: 1\nc: 2\n",
 	value: struct{ A, B int }{A: 1},
-	error: `yaml: unmarshal errors:\n  line 2: field c not found in type struct { A int; B int }`,
+	error: `yaml: unmarshal errors:\n  yaml: line 2: field "c" not found in type struct { A int; B int }`,
 }, {
 	unique: true,
 	data:   "a: 1\nb: 2\na: 3\n",
 	value:  struct{ A, B int }{A: 3, B: 2},
-	error:  `yaml: unmarshal errors:\n  line 3: mapping key "a" already defined at line 1`,
+	error:  `yaml: unmarshal errors:\n  yaml: line 3: mapping key "a" already defined at line 1`,
 }, {
 	unique: true,
 	data:   "c: 3\na: 1\nb: 2\nc: 4\n",
@@ -1639,7 +1502,7 @@ var unmarshalStrictTests = []struct {
 			},
 		},
 	},
-	error: `yaml: unmarshal errors:\n  line 4: mapping key "c" already defined at line 1`,
+	error: `yaml: unmarshal errors:\n  yaml: line 4: mapping key "c" already defined at line 1`,
 }, {
 	unique: true,
 	data:   "c: 0\na: 1\nb: 2\nc: 1\n",
@@ -1655,7 +1518,7 @@ var unmarshalStrictTests = []struct {
 			},
 		},
 	},
-	error: `yaml: unmarshal errors:\n  line 4: mapping key "c" already defined at line 1`,
+	error: `yaml: unmarshal errors:\n  yaml: line 4: mapping key "c" already defined at line 1`,
 }, {
 	unique: true,
 	data:   "c: 1\na: 1\nb: 2\nc: 3\n",
@@ -1669,7 +1532,7 @@ var unmarshalStrictTests = []struct {
 			"c": 3,
 		},
 	},
-	error: `yaml: unmarshal errors:\n  line 4: mapping key "c" already defined at line 1`,
+	error: `yaml: unmarshal errors:\n  yaml: line 4: mapping key "c" already defined at line 1`,
 }, {
 	unique: true,
 	data:   "a: 1\n9: 2\nnull: 3\n9: 4",
@@ -1678,7 +1541,7 @@ var unmarshalStrictTests = []struct {
 		nil: 3,
 		9:   4,
 	},
-	error: `yaml: unmarshal errors:\n  line 4: mapping key "9" already defined at line 2`,
+	error: `yaml: unmarshal errors:\n  yaml: line 4: mapping key "9" already defined at line 2`,
 }}
 
 func (s *S) TestUnmarshalKnownFields(c *C) {
