@@ -6,7 +6,7 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	"gopkg.in/yaml.v3"
+	"github.com/go-faster/yamlx"
 )
 
 var limitTests = []struct {
