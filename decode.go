@@ -407,13 +407,15 @@ func (d *decoder) callObsoleteUnmarshaler(n *Node, u obsoleteUnmarshaler) (good 
 //
 // If n holds a null value, prepare returns before doing anything.
 func (d *decoder) prepare(n *Node, out reflect.Value) (newout reflect.Value, unmarshaled, good bool) {
-	if n.ShortTag() == nullTag {
-		return out, false, false
-	}
+	isNull := n.ShortTag() == nullTag
 	again := true
 	for again {
 		again = false
 		if out.Kind() == reflect.Ptr {
+			if isNull {
+				// If the value is a null, don't initialize it.
+				return out, false, false
+			}
 			if out.IsNil() {
 				out.Set(reflect.New(out.Type().Elem()))
 			}
