@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/go-faster/yamlx"
+	yaml "github.com/go-faster/yamlx"
 )
 
 // An example showing how to unmarshal embedded
