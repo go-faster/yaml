@@ -91,6 +91,11 @@ func unmarshalErr(n *Node, typ reflect.Type, msgf string, args ...interface{}) e
 	}
 }
 
+// Unwrap returns the underlying error.
+func (s *UnmarshalError) Unwrap() error {
+	return s.Err
+}
+
 // Error returns the error message.
 func (s *UnmarshalError) Error() string {
 	n := s.Node
