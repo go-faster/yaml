@@ -1,11 +1,12 @@
-package yaml
+package yaml_test
 
 import (
 	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
+
+	yaml "github.com/go-faster/yamlx"
 )
 
 func BenchmarkUnmarshal(b *testing.B) {
