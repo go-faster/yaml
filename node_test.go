@@ -19,10 +19,10 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"os"
 	"strings"
+	"testing"
 
-	. "gopkg.in/check.v1"
+	"github.com/stretchr/testify/require"
 
 	yaml "github.com/go-faster/yamlx"
 )
@@ -2556,56 +2556,55 @@ var nodeTests = []struct {
 	},
 }
 
-func (s *S) TestNodeRoundtrip(c *C) {
-	defer os.Setenv("TZ", os.Getenv("TZ"))
-	os.Setenv("TZ", "UTC")
+func TestNodeRoundtrip(t *testing.T) {
+	t.Setenv("TZ", "UTC")
+
 	for i, item := range nodeTests {
-		c.Logf("test %d: %q", i, item.yaml)
-
-		if strings.Contains(item.yaml, "#") {
-			var buf bytes.Buffer
-			fprintComments(&buf, &item.node, "    ")
-			c.Logf("  expected comments:\n%s", buf.Bytes())
-		}
-
-		decode := true
-		encode := true
-
-		testYaml := item.yaml
-		if s := strings.TrimPrefix(testYaml, "[decode]"); s != testYaml {
-			encode = false
-			testYaml = s
-		}
-		if s := strings.TrimPrefix(testYaml, "[encode]"); s != testYaml {
-			decode = false
-			testYaml = s
-		}
-
-		if decode {
-			var node yaml.Node
-			err := yaml.Unmarshal([]byte(testYaml), &node)
-			c.Assert(err, IsNil)
+		t.Run(fmt.Sprintf("Test%d", i+1), func(t *testing.T) {
 			if strings.Contains(item.yaml, "#") {
 				var buf bytes.Buffer
-				fprintComments(&buf, &node, "    ")
-				c.Logf("  obtained comments:\n%s", buf.Bytes())
+				fprintComments(&buf, &item.node, "    ")
+				t.Logf("Expected comments:\n%s", buf.Bytes())
 			}
-			c.Assert(&node, DeepEquals, &item.node)
-		}
-		if encode {
-			node := deepCopyNode(&item.node, nil)
-			buf := bytes.Buffer{}
-			enc := yaml.NewEncoder(&buf)
-			enc.SetIndent(2)
-			err := enc.Encode(node)
-			c.Assert(err, IsNil)
-			err = enc.Close()
-			c.Assert(err, IsNil)
-			c.Assert(buf.String(), Equals, testYaml)
+			a := require.New(t)
 
-			// Ensure there were no mutations to the tree.
-			c.Assert(node, DeepEquals, &item.node)
-		}
+			decode := true
+			encode := true
+
+			testYaml := item.yaml
+			if s := strings.TrimPrefix(testYaml, "[decode]"); s != testYaml {
+				encode = false
+				testYaml = s
+			}
+			if s := strings.TrimPrefix(testYaml, "[encode]"); s != testYaml {
+				decode = false
+				testYaml = s
+			}
+
+			if decode {
+				var node yaml.Node
+				err := yaml.Unmarshal([]byte(testYaml), &node)
+				a.NoError(err)
+				if strings.Contains(item.yaml, "#") {
+					var buf bytes.Buffer
+					fprintComments(&buf, &node, "    ")
+					t.Logf("obtained comments:\n%s", buf.Bytes())
+				}
+				a.Equal(item.node, node)
+			}
+			if encode {
+				node := deepCopyNode(&item.node, nil)
+				buf := strings.Builder{}
+				enc := yaml.NewEncoder(&buf)
+				enc.SetIndent(2)
+				a.NoError(enc.Encode(node))
+				a.NoError(enc.Close())
+
+				a.Equal(testYaml, buf.String())
+				// Ensure there were no mutations to the tree.
+				a.Equal(&item.node, node)
+			}
+		})
 	}
 }
 
@@ -2699,35 +2698,33 @@ var setStringTests = []struct {
 	},
 }
 
-func (s *S) TestSetString(c *C) {
-	defer os.Setenv("TZ", os.Getenv("TZ"))
-	os.Setenv("TZ", "UTC")
+func TestSetString(t *testing.T) {
+	t.Setenv("TZ", "UTC")
+
 	for i, item := range setStringTests {
-		c.Logf("test %d: %q", i, item.str)
+		t.Run(fmt.Sprintf("Test%d", i+1), func(t *testing.T) {
+			t.Logf("Input: %q", item.str)
+			a := require.New(t)
 
-		var node yaml.Node
+			var node yaml.Node
+			node.SetString(item.str)
+			a.Equal(item.node, node)
 
-		node.SetString(item.str)
+			buf := strings.Builder{}
+			enc := yaml.NewEncoder(&buf)
+			enc.SetIndent(2)
+			a.NoError(enc.Encode(&item.node))
+			a.NoError(enc.Close())
 
-		c.Assert(node, DeepEquals, item.node)
+			a.Equal(item.yaml, buf.String())
 
-		buf := bytes.Buffer{}
-		enc := yaml.NewEncoder(&buf)
-		enc.SetIndent(2)
-		err := enc.Encode(&item.node)
-		c.Assert(err, IsNil)
-		err = enc.Close()
-		c.Assert(err, IsNil)
-		c.Assert(buf.String(), Equals, item.yaml)
+			var doc yaml.Node
+			a.NoError(yaml.Unmarshal([]byte(item.yaml), &doc))
 
-		var doc yaml.Node
-		err = yaml.Unmarshal([]byte(item.yaml), &doc)
-		c.Assert(err, IsNil)
-
-		var str string
-		err = node.Decode(&str)
-		c.Assert(err, IsNil)
-		c.Assert(str, Equals, item.str)
+			var str string
+			a.NoError(node.Decode(&str))
+			a.Equal(item.str, str)
+		})
 	}
 }
 
@@ -2794,57 +2791,61 @@ var nodeEncodeDecodeTests = []struct {
 	},
 }}
 
-func (s *S) TestNodeEncodeDecode(c *C) {
+func TestNodeEncodeDecode(t *testing.T) {
 	for i, item := range nodeEncodeDecodeTests {
-		c.Logf("Encode/Decode test value #%d: %#v", i, item.value)
+		t.Run(fmt.Sprintf("Test%d", i+1), func(t *testing.T) {
+			a := require.New(t)
 
-		var v interface{}
-		err := item.node.Decode(&v)
-		c.Assert(err, IsNil)
-		c.Assert(v, DeepEquals, item.value)
+			var v interface{}
+			a.NoError(item.node.Decode(&v))
+			a.Equal(item.value, v)
 
-		var n yaml.Node
-		err = n.Encode(item.value)
-		c.Assert(err, IsNil)
-		c.Assert(n, DeepEquals, item.node)
+			var n yaml.Node
+			a.NoError(n.Encode(item.value))
+			a.Equal(item.node, n)
+		})
 	}
 }
 
-func (s *S) TestNodeZeroEncodeDecode(c *C) {
+func TestNodeZeroEncodeDecode(t *testing.T) {
+	a := require.New(t)
+
 	// Zero node value behaves as nil when encoding...
 	var n yaml.Node
 	data, err := yaml.Marshal(&n)
-	c.Assert(err, IsNil)
-	c.Assert(string(data), Equals, "null\n")
+	a.NoError(err)
+	a.Equal("null\n", string(data))
 
 	// ... and decoding.
 	var v = &struct{}{}
-	c.Assert(n.Decode(&v), IsNil)
-	c.Assert(v, IsNil)
+	a.NoError(n.Decode(&v))
+	a.Nil(v)
 
 	// ... and even when looking for its tag.
-	c.Assert(n.ShortTag(), Equals, "!!null")
+	a.Equal("!!null", n.ShortTag())
 
 	// Kind zero is still unknown, though.
 	n.Line = 1
 	_, err = yaml.Marshal(&n)
-	c.Assert(err, ErrorMatches, "yaml: cannot encode node with unknown kind 0")
-	c.Assert(n.Decode(&v), ErrorMatches, "yaml: line 1: cannot decode node with unknown kind 0")
+	a.EqualError(err, "yaml: cannot encode node with unknown kind 0")
+	a.EqualError(n.Decode(&v), "yaml: line 1: cannot decode node with unknown kind 0")
 }
 
-func (s *S) TestNodeOmitEmpty(c *C) {
+func TestNodeOmitEmpty(t *testing.T) {
+	a := require.New(t)
+
 	var v struct {
 		A int
 		B yaml.Node ",omitempty"
 	}
 	v.A = 1
 	data, err := yaml.Marshal(&v)
-	c.Assert(err, IsNil)
-	c.Assert(string(data), Equals, "a: 1\n")
+	a.NoError(err)
+	a.Equal("a: 1\n", string(data))
 
 	v.B.Line = 1
 	_, err = yaml.Marshal(&v)
-	c.Assert(err, ErrorMatches, "yaml: cannot encode node with unknown kind 0")
+	a.EqualError(err, "yaml: cannot encode node with unknown kind 0")
 }
 
 func fprintComments(out io.Writer, node *yaml.Node, indent string) {
