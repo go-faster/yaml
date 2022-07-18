@@ -16,16 +16,15 @@
 package yaml_test
 
 import (
-	"bytes"
 	"fmt"
 	"math"
 	"net"
-	"os"
 	"strconv"
 	"strings"
+	"testing"
 	"time"
 
-	. "gopkg.in/check.v1"
+	"github.com/stretchr/testify/require"
 
 	yaml "github.com/go-faster/yamlx"
 )
@@ -553,46 +552,56 @@ var marshalTests = []struct {
 	},
 }
 
-func (s *S) TestMarshal(c *C) {
-	defer os.Setenv("TZ", os.Getenv("TZ"))
-	os.Setenv("TZ", "UTC")
+func TestMarshal(t *testing.T) {
+	t.Setenv("TZ", "UTC")
+
 	for i, item := range marshalTests {
-		c.Logf("test %d: %q", i, item.data)
-		data, err := yaml.Marshal(item.value)
-		c.Assert(err, IsNil)
-		c.Assert(string(data), Equals, item.data)
+		item := item
+		t.Run(fmt.Sprintf("Test%d", i+1), func(t *testing.T) {
+			t.Logf("Input: %#v", item.value)
+			a := require.New(t)
+
+			data, err := yaml.Marshal(item.value)
+			a.NoError(err)
+			a.Equal(item.data, string(data))
+		})
 	}
 }
 
-func (s *S) TestEncoderSingleDocument(c *C) {
+func TestEncoderSingleDocument(t *testing.T) {
 	for i, item := range marshalTests {
-		c.Logf("test %d. %q", i, item.data)
-		var buf bytes.Buffer
-		enc := yaml.NewEncoder(&buf)
-		err := enc.Encode(item.value)
-		c.Assert(err, Equals, nil)
-		err = enc.Close()
-		c.Assert(err, Equals, nil)
-		c.Assert(buf.String(), Equals, item.data)
+		item := item
+		t.Run(fmt.Sprintf("Test%d", i+1), func(t *testing.T) {
+			t.Logf("Input: %#v", item.value)
+			a := require.New(t)
+
+			var buf strings.Builder
+			enc := yaml.NewEncoder(&buf)
+			a.NoError(enc.Encode(item.value))
+			a.NoError(enc.Close())
+			a.Equal(item.data, buf.String())
+		})
 	}
 }
 
-func (s *S) TestEncoderMultipleDocuments(c *C) {
-	var buf bytes.Buffer
+func TestEncoderMultipleDocuments(t *testing.T) {
+	a := require.New(t)
+
+	var buf strings.Builder
 	enc := yaml.NewEncoder(&buf)
-	err := enc.Encode(map[string]string{"a": "b"})
-	c.Assert(err, Equals, nil)
-	err = enc.Encode(map[string]string{"c": "d"})
-	c.Assert(err, Equals, nil)
-	err = enc.Close()
-	c.Assert(err, Equals, nil)
-	c.Assert(buf.String(), Equals, "a: b\n---\nc: d\n")
+	a.NoError(enc.Encode(map[string]string{"a": "b"}))
+	a.NoError(enc.Encode(map[string]string{"c": "d"}))
+	a.NoError(enc.Close())
+	a.Equal("a: b\n---\nc: d\n", buf.String())
 }
 
-func (s *S) TestEncoderWriteError(c *C) {
+func TestEncoderWriteError(t *testing.T) {
+	a := require.New(t)
+
 	enc := yaml.NewEncoder(errorWriter{})
 	err := enc.Encode(map[string]string{"a": "b"})
-	c.Assert(err, ErrorMatches, `yaml: write error: some write error`) // Data not flushed yet
+	a.Error(err)
+	a.Regexp(`yaml: write error: some write error`, err.Error())
 }
 
 type errorWriter struct{}
@@ -619,31 +628,49 @@ var marshalErrorTests = []struct {
 	panic: `cannot have key "a" in inlined map: conflicts with struct field`,
 }}
 
-func (s *S) TestMarshalErrors(c *C) {
-	for _, item := range marshalErrorTests {
-		if item.panic != "" {
-			c.Assert(func() { yaml.Marshal(item.value) }, PanicMatches, item.panic)
-		} else {
+func TestMarshalErrors(t *testing.T) {
+	for i, item := range marshalErrorTests {
+		item := item
+		t.Run(fmt.Sprintf("Test%d", i+1), func(t *testing.T) {
+			a := require.New(t)
+
+			if item.panic != "" {
+				msg := func() (s string) {
+					defer func() {
+						rr := recover()
+						a.NotNil(rr)
+						s = fmt.Sprintf("%v", rr)
+					}()
+					yaml.Marshal(item.value)
+					return s
+				}()
+				a.Regexp(item.panic, msg)
+				return
+			}
+
 			_, err := yaml.Marshal(item.value)
-			c.Assert(err, ErrorMatches, item.error)
-		}
+			a.Error(err)
+			a.Regexp(item.error, err.Error())
+		})
 	}
 }
 
-func (s *S) TestMarshalTypeCache(c *C) {
+func TestMarshalTypeCache(t *testing.T) {
+	a := require.New(t)
+
 	var data []byte
 	var err error
 	func() {
 		type T struct{ A int }
 		data, err = yaml.Marshal(&T{})
-		c.Assert(err, IsNil)
+		a.NoError(err)
 	}()
 	func() {
 		type T struct{ B int }
 		data, err = yaml.Marshal(&T{})
-		c.Assert(err, IsNil)
+		a.NoError(err)
 	}()
-	c.Assert(string(data), Equals, "b: 0\n")
+	a.Equal("b: 0\n", string(data))
 }
 
 var marshalerTests = []struct {
@@ -673,22 +700,30 @@ type marshalerValue struct {
 	Field marshalerType "_"
 }
 
-func (s *S) TestMarshaler(c *C) {
-	for _, item := range marshalerTests {
-		obj := &marshalerValue{}
-		obj.Field.value = item.value
-		data, err := yaml.Marshal(obj)
-		c.Assert(err, IsNil)
-		c.Assert(string(data), Equals, item.data)
+func TestMarshaler(t *testing.T) {
+	for i, item := range marshalerTests {
+		item := item
+		t.Run(fmt.Sprintf("Test%d", i+1), func(t *testing.T) {
+			t.Logf("Input: %#v", item.value)
+			a := require.New(t)
+
+			obj := &marshalerValue{}
+			obj.Field.value = item.value
+			data, err := yaml.Marshal(obj)
+			a.NoError(err)
+			a.Equal(item.data, string(data))
+		})
 	}
 }
 
-func (s *S) TestMarshalerWholeDocument(c *C) {
+func TestMarshalerWholeDocument(t *testing.T) {
+	a := require.New(t)
+
 	obj := &marshalerType{}
 	obj.value = map[string]string{"hello": "world!"}
 	data, err := yaml.Marshal(obj)
-	c.Assert(err, IsNil)
-	c.Assert(string(data), Equals, "hello: world!\n")
+	a.NoError(err)
+	a.Equal("hello: world!\n", string(data))
 }
 
 type failingMarshaler struct{}
@@ -697,23 +732,25 @@ func (ft *failingMarshaler) MarshalYAML() (interface{}, error) {
 	return nil, errFailing
 }
 
-func (s *S) TestMarshalerError(c *C) {
+func TestMarshalerError(t *testing.T) {
 	_, err := yaml.Marshal(&failingMarshaler{})
-	c.Assert(err, Equals, errFailing)
+	require.ErrorIs(t, err, errFailing)
 }
 
-func (s *S) TestSetIndent(c *C) {
-	var buf bytes.Buffer
+func TestSetIndent(t *testing.T) {
+	a := require.New(t)
+
+	var buf strings.Builder
 	enc := yaml.NewEncoder(&buf)
 	enc.SetIndent(8)
-	err := enc.Encode(map[string]interface{}{"a": map[string]interface{}{"b": map[string]string{"c": "d"}}})
-	c.Assert(err, Equals, nil)
-	err = enc.Close()
-	c.Assert(err, Equals, nil)
-	c.Assert(buf.String(), Equals, "a:\n        b:\n                c: d\n")
+	a.NoError(enc.Encode(map[string]interface{}{"a": map[string]interface{}{"b": map[string]string{"c": "d"}}}))
+	a.NoError(enc.Close())
+	a.Equal("a:\n        b:\n                c: d\n", buf.String())
 }
 
-func (s *S) TestSortedOutput(c *C) {
+func TestSortedOutput(t *testing.T) {
+	a := require.New(t)
+
 	order := []interface{}{
 		false,
 		true,
@@ -767,7 +804,8 @@ func (s *S) TestSortedOutput(c *C) {
 		m[k] = 1
 	}
 	data, err := yaml.Marshal(m)
-	c.Assert(err, IsNil)
+	a.NoError(err)
+
 	out := "\n" + string(data)
 	last := 0
 	for i, k := range order {
@@ -777,13 +815,15 @@ func (s *S) TestSortedOutput(c *C) {
 				repr = `"` + repr + `"`
 			}
 		}
+		a.Contains(out, "\n"+repr+":")
+
 		index := strings.Index(out, "\n"+repr+":")
-		if index == -1 {
-			c.Fatalf("%#v is not in the output: %#v", k, out)
+		a.NotEqual(-1, index, "%#v is not in the output: %#v", k, out)
+		var prev interface{}
+		if i > 0 {
+			prev = order[i-1]
 		}
-		if index < last {
-			c.Fatalf("%#v was generated before %#v: %q", k, order[i-1], out)
-		}
+		a.GreaterOrEqual(index, last, "%#v was generated before %#v: %q", k, prev, out)
 		last = index
 	}
 }
