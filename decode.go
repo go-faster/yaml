@@ -305,7 +305,7 @@ func (p *parser) mapping() *Node {
 
 type decoder struct {
 	doc     *Node
-	aliases map[*Node]bool
+	aliases map[*Node]struct{}
 	terrors []error
 
 	stringMapType  reflect.Type
@@ -317,7 +317,7 @@ type decoder struct {
 	aliasCount  int
 	aliasDepth  int
 
-	mergedFields map[interface{}]bool
+	mergedFields map[interface{}]struct{}
 }
 
 var (
@@ -334,7 +334,7 @@ func newDecoder() *decoder {
 		generalMapType: generalMapType,
 		uniqueKeys:     true,
 	}
-	d.aliases = make(map[*Node]bool)
+	d.aliases = make(map[*Node]struct{})
 	return d
 }
 
@@ -527,11 +527,11 @@ func (d *decoder) document(n *Node, out reflect.Value) (good bool) {
 }
 
 func (d *decoder) alias(n *Node, out reflect.Value) (good bool) {
-	if d.aliases[n] {
+	if _, ok := d.aliases[n]; ok {
 		// TODO this could actually be allowed in some circumstances.
 		fail(unmarshalErr(n, out.Type(), "anchor %q value contains itself", n.Value))
 	}
-	d.aliases[n] = true
+	d.aliases[n] = struct{}{}
 	d.aliasDepth++
 	good = d.unmarshal(n.Alias, out)
 	d.aliasDepth--
@@ -820,10 +820,10 @@ func (d *decoder) mapping(n *Node, out reflect.Value) (good bool) {
 		if d.unmarshal(n.Content[i], k) {
 			if mergedFields != nil {
 				ki := k.Interface()
-				if mergedFields[ki] {
+				if _, ok := mergedFields[ki]; ok {
 					continue
 				}
-				mergedFields[ki] = true
+				mergedFields[ki] = struct{}{}
 			}
 			kkind := k.Kind()
 			if kkind == reflect.Interface {
@@ -902,10 +902,10 @@ func (d *decoder) mappingStruct(n *Node, out reflect.Value) (good bool) {
 		}
 		sname := name.String()
 		if mergedFields != nil {
-			if mergedFields[sname] {
+			if _, ok := mergedFields[sname]; ok {
 				continue
 			}
-			mergedFields[sname] = true
+			mergedFields[sname] = struct{}{}
 		}
 
 		switch info, ok := sinfo.FieldsMap[sname]; {
@@ -951,11 +951,11 @@ func failWantMap(merge *Node, typ reflect.Type) {
 func (d *decoder) merge(parent, merge *Node, out reflect.Value) {
 	mergedFields := d.mergedFields
 	if mergedFields == nil {
-		d.mergedFields = make(map[interface{}]bool)
+		d.mergedFields = make(map[interface{}]struct{})
 		for i := 0; i < len(parent.Content); i += 2 {
 			k := reflect.New(ifaceType).Elem()
 			if d.unmarshal(parent.Content[i], k) {
-				d.mergedFields[k.Interface()] = true
+				d.mergedFields[k.Interface()] = struct{}{}
 			}
 		}
 	}
