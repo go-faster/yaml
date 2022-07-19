@@ -3,7 +3,7 @@ package yaml_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	yaml "github.com/go-faster/yamlx"
 )
@@ -78,19 +78,28 @@ func FuzzDecodeEncodeDecode(f *testing.F) {
 			return
 		}
 
-		a := assert.New(t)
+		a := require.New(t)
 		data, err := yaml.Marshal(&v)
 		a.NoError(err)
 
 		var v2 yaml.Node
-		a.NoError(yaml.Unmarshal(data, &v2))
+		a.NoError(yaml.Unmarshal(data, &v2), "Data: %q", data)
 
 		if v.IsZero() != v2.IsZero() {
 			t.Logf("v.IsZero() != v2.IsZero(), %v != %v", v.IsZero(), v2.IsZero())
 			t.Skipf("Zero value, data: %q", data)
 			return
 		}
-		a.Equal(v.ShortTag(), v2.ShortTag())
-		a.Equal(v.Value, v2.Value)
+
+		var compareNodes func(n1, n2 *yaml.Node)
+		compareNodes = func(n1, n2 *yaml.Node) {
+			a.Equal(n1.ShortTag(), n2.ShortTag())
+			a.Equal(n1.Value, n2.Value)
+			a.Equal(len(n1.Content), len(n2.Content))
+			for i := range n1.Content {
+				compareNodes(n1.Content[i], n2.Content[i])
+			}
+		}
+		compareNodes(&v, &v2)
 	})
 }
