@@ -36,6 +36,9 @@ func addFuzzingCorpus(f testingF) {
 		"? \ufeff:\n",
 		"0: \ufeff\n",
 		"? \ufeff: \ufeff\n",
+
+		// https://github.com/go-faster/yamlx/issues/8
+		"0:\n    #00\n    - |1 \n      00",
 	}
 
 	for _, data := range cases {
