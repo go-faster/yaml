@@ -38,18 +38,14 @@ type encoder struct {
 }
 
 func newEncoder() *encoder {
-	e := &encoder{}
-	yaml_emitter_initialize(&e.emitter)
+	e := getEncoder()
 	yaml_emitter_set_output_string(&e.emitter, &e.out)
-	yaml_emitter_set_unicode(&e.emitter, true)
 	return e
 }
 
 func newEncoderWithWriter(w io.Writer) *encoder {
-	e := &encoder{}
-	yaml_emitter_initialize(&e.emitter)
+	e := getEncoder()
 	yaml_emitter_set_output_writer(&e.emitter, w)
-	yaml_emitter_set_unicode(&e.emitter, true)
 	return e
 }
 
@@ -73,7 +69,7 @@ func (e *encoder) finish() {
 }
 
 func (e *encoder) destroy() {
-	yaml_emitter_delete(&e.emitter)
+	putEncoder(e)
 }
 
 func (e *encoder) emit() {
