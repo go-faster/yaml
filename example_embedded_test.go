@@ -36,13 +36,14 @@ type StructB struct {
 	B       string `yaml:"b"`
 }
 
-var data = `
+func ExampleUnmarshal_embedded() {
+	var (
+		b    StructB
+		data = `
 a: a string from struct A
 b: a string from struct B
 `
-
-func ExampleUnmarshal_embedded() {
-	var b StructB
+	)
 
 	err := yaml.Unmarshal([]byte(data), &b)
 	if err != nil {
