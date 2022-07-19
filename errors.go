@@ -119,6 +119,9 @@ func (s *MarshalError) Error() string {
 // the YAML document cannot be properly decoded into the requested
 // types. When this error is returned, the value is still
 // unmarshaled partially.
+//
+// Group is a multi-error which contains all errors that occurred.
+// Use multierr.Errors to get a list of all errors.
 type TypeError struct {
 	Group error
 }
@@ -131,4 +134,22 @@ func (e *TypeError) Unwrap() error {
 // Error returns the error message.
 func (e *TypeError) Error() string {
 	return fmt.Sprintf("yaml: unmarshal errors:\n  %s", e.Group)
+}
+
+func handleErr(err *error) {
+	if v := recover(); v != nil {
+		if e, ok := v.(yamlError); ok {
+			*err = e.err
+		} else {
+			panic(v)
+		}
+	}
+}
+
+type yamlError struct {
+	err error
+}
+
+func fail(err error) {
+	panic(yamlError{err})
 }
