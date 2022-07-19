@@ -111,7 +111,7 @@ issues:
 
     # Disable some linters for translated C code.
     - path: (apic|writerc|emitterc|parserc|scannerc|readerc|yamlh|yamlprivateh)\.go
-      linters: [ whitespace, deadcode, varcheck, ineffassign ]
+      linters: [ whitespace, deadcode, varcheck, ineffassign, unparam ]
     - path: (apic|writerc|emitterc|parserc|scannerc|readerc|yamlh|yamlprivateh)\.go
       linters: [ revive ]
       text: "(var-naming: don't use underscores|increment-decrement:|indent-error-flow:)"
