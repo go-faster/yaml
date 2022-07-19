@@ -1937,7 +1937,13 @@ func yaml_emitter_write_folded_scalar(emitter *yaml_emitter_t, value []byte) boo
 				for is_break(value, k) {
 					k += width(value[k])
 				}
-				if !is_blankz(value, k) {
+				// FIXME(tdakkota): hacky, probably there is a better way to do this
+				//
+				// Do not break the line if the next line is additionally indented.
+				//
+				// It leads to double line breaking.
+				next_line_more_indent := bytes.HasPrefix(value[i+1:], []byte{' '})
+				if !is_blankz(value, k) && !next_line_more_indent {
 					if !put_break(emitter) {
 						return false
 					}
