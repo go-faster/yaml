@@ -3,7 +3,7 @@ package yaml_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	yaml "github.com/go-faster/yamlx"
 )
@@ -36,6 +36,10 @@ func addFuzzingCorpus(f testingF) {
 		"? \ufeff:\n",
 		"0: \ufeff\n",
 		"? \ufeff: \ufeff\n",
+
+		"scalar: >\n next\n line\n  * one\n",
+		// https://github.com/go-faster/yamlx/issues/8
+		"0:\n    #00\n    - |1 \n      00",
 	}
 
 	for _, data := range cases {
@@ -65,10 +69,17 @@ func FuzzDecodeEncodeDecode(f *testing.F) {
 	addFuzzingCorpus(f)
 
 	f.Fuzz(func(t *testing.T, input []byte) {
+		var (
+			data []byte
+			err  error
+		)
 		defer func() {
 			r := recover()
 			if r != nil || t.Failed() || t.Skipped() {
 				t.Logf("Input: %q", input)
+				if data != nil {
+					t.Logf("Data: %q", data)
+				}
 			}
 		}()
 
@@ -78,19 +89,27 @@ func FuzzDecodeEncodeDecode(f *testing.F) {
 			return
 		}
 
-		a := assert.New(t)
-		data, err := yaml.Marshal(&v)
+		a := require.New(t)
+		data, err = yaml.Marshal(&v)
 		a.NoError(err)
 
 		var v2 yaml.Node
 		a.NoError(yaml.Unmarshal(data, &v2))
 
 		if v.IsZero() != v2.IsZero() {
-			t.Logf("v.IsZero() != v2.IsZero(), %v != %v", v.IsZero(), v2.IsZero())
-			t.Skipf("Zero value, data: %q", data)
+			t.Skipf("v.IsZero() != v2.IsZero(), %v != %v", v.IsZero(), v2.IsZero())
 			return
 		}
-		a.Equal(v.ShortTag(), v2.ShortTag())
-		a.Equal(v.Value, v2.Value)
+
+		var compareNodes func(n1, n2 *yaml.Node)
+		compareNodes = func(n1, n2 *yaml.Node) {
+			a.Equal(n1.ShortTag(), n2.ShortTag())
+			a.Equal(n1.Value, n2.Value)
+			a.Equal(len(n1.Content), len(n2.Content))
+			for i := range n1.Content {
+				compareNodes(n1.Content[i], n2.Content[i])
+			}
+		}
+		compareNodes(&v, &v2)
 	})
 }

@@ -235,14 +235,8 @@ func yaml_emitter_increase_indent(emitter *yaml_emitter_t, flow, indentless bool
 			emitter.indent = 0
 		}
 	} else if !indentless {
-		// [Go] This was changed so that indentations are more regular.
-		if emitter.states[len(emitter.states)-1] == yaml_EMIT_BLOCK_SEQUENCE_ITEM_STATE {
-			// The first indent inside a sequence will just skip the "- " indicator.
-			emitter.indent += 2
-		} else {
-			// Everything else aligns to the chosen indentation.
-			emitter.indent = emitter.best_indent * ((emitter.indent + emitter.best_indent) / emitter.best_indent)
-		}
+		// Everything else aligns to the chosen indentation.
+		emitter.indent = emitter.best_indent * ((emitter.indent + emitter.best_indent) / emitter.best_indent)
 	}
 	return true
 }
@@ -1943,7 +1937,13 @@ func yaml_emitter_write_folded_scalar(emitter *yaml_emitter_t, value []byte) boo
 				for is_break(value, k) {
 					k += width(value[k])
 				}
-				if !is_blankz(value, k) {
+				// FIXME(tdakkota): hacky, probably there is a better way to do this
+				//
+				// Do not break the line if the next line is additionally indented.
+				//
+				// It leads to double line breaking.
+				next_line_more_indent := bytes.HasPrefix(value[i+1:], []byte{' '})
+				if !is_blankz(value, k) && !next_line_more_indent {
 					if !put_break(emitter) {
 						return false
 					}

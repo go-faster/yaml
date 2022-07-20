@@ -141,11 +141,11 @@ var marshalTests = []struct {
 	},
 	{
 		map[string][]string{"v": {"A", "B\nC"}},
-		"v:\n    - A\n    - |-\n      B\n      C\n",
+		"v:\n    - A\n    - |-\n        B\n        C\n",
 	},
 	{
 		map[string][]interface{}{"v": {"A", 1, map[string][]int{"B": {2, 3}}}},
-		"v:\n    - A\n    - 1\n    - B:\n        - 2\n        - 3\n",
+		"v:\n    - A\n    - 1\n    -   B:\n            - 2\n            - 3\n",
 	},
 	{
 		map[string]interface{}{"a": map[interface{}]interface{}{"b": "c"}},
@@ -154,6 +154,33 @@ var marshalTests = []struct {
 	{
 		map[string]interface{}{"a": "-"},
 		"a: '-'\n",
+	},
+
+	// Ensure correct indentation.
+	//
+	// https://github.com/go-yaml/yaml/issues/643
+	// https://github.com/go-faster/yamlx/issues/8
+	{
+		[]string{" hello\nworld"},
+		"- |4-\n     hello\n    world\n",
+	},
+	{
+		&yaml.Node{
+			Kind: yaml.DocumentNode,
+			Content: []*yaml.Node{
+				{
+					Kind: yaml.MappingNode,
+					Tag:  "!!map",
+					Content: []*yaml.Node{
+						{Kind: yaml.ScalarNode, Tag: "!!str", Value: "a"},
+						{Kind: yaml.SequenceNode, Tag: "!!seq", Content: []*yaml.Node{
+							{Kind: yaml.ScalarNode, Style: yaml.LiteralStyle, Tag: "!!str", Value: " 00"},
+						}},
+					},
+				},
+			},
+		},
+		"a:\n    - |4-\n         00\n",
 	},
 
 	// Simple values.
@@ -473,7 +500,7 @@ var marshalTests = []struct {
 	// Check indentation of maps inside sequences inside maps.
 	{
 		map[string]interface{}{"a": map[string]interface{}{"b": []map[string]int{{"c": 1, "d": 2}}}},
-		"a:\n    b:\n        - c: 1\n          d: 2\n",
+		"a:\n    b:\n        -   c: 1\n            d: 2\n",
 	},
 
 	// Strings with tabs were disallowed as literals (issue #471).
