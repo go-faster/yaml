@@ -14,15 +14,17 @@ var _ = []interface {
 
 // SyntaxError is an error that occurs during parsing.
 type SyntaxError struct {
-	Line   int
 	Offset int
+	Line   int
+	Column int
 	Msg    string
 }
 
-func syntaxErr(line, offset int, msgf string, args ...interface{}) error {
+func syntaxErr(offset, line, column int, msgf string, args ...interface{}) error {
 	return &SyntaxError{
-		Line:   line,
 		Offset: offset,
+		Line:   line,
+		Column: column,
 		Msg:    fmt.Sprintf(msgf, args...),
 	}
 }
@@ -30,9 +32,15 @@ func syntaxErr(line, offset int, msgf string, args ...interface{}) error {
 // Error returns the error message.
 func (s *SyntaxError) Error() string {
 	if s.Line == 0 {
-		return fmt.Sprintf("yaml: %s", s.Msg)
+		if s.Offset == 0 {
+			return fmt.Sprintf("yaml: %s", s.Msg)
+		}
+		return fmt.Sprintf("yaml: offset %d: %s", s.Offset, s.Msg)
 	}
-	return fmt.Sprintf("yaml: line %d: %s", s.Line, s.Msg)
+	if s.Column == 0 {
+		return fmt.Sprintf("yaml: line %d: %s", s.Line, s.Msg)
+	}
+	return fmt.Sprintf("yaml: line %d:%d: %s", s.Line, s.Column, s.Msg)
 }
 
 // UnknownFieldError reports an unknown field.

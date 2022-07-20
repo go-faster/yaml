@@ -104,15 +104,17 @@ func (p *parser) peek() yaml_event_type_t {
 }
 
 func (p *parser) fail() {
-	var line int
+	var line, column int
 	if p.parser.context_mark.line != 0 {
 		line = p.parser.context_mark.line
+		column = p.parser.context_mark.column
 		// Scanner errors don't iterate line before returning error
 		if p.parser.error == yaml_SCANNER_ERROR {
 			line++
 		}
 	} else if p.parser.problem_mark.line != 0 {
 		line = p.parser.problem_mark.line
+		column = p.parser.problem_mark.column
 		// Scanner errors don't iterate line before returning error
 		if p.parser.error == yaml_SCANNER_ERROR {
 			line++
@@ -125,7 +127,7 @@ func (p *parser) fail() {
 		msg = "unknown problem parsing YAML content"
 	}
 
-	fail(syntaxErr(line, p.parser.offset, msg))
+	fail(syntaxErr(p.parser.problem_offset, line, column, msg))
 }
 
 func (p *parser) anchor(n *Node, anchor []byte) {
