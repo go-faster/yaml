@@ -1079,6 +1079,8 @@ var unmarshalErrorTests = []struct {
 	{"a: 1\nb: 2\nc 2\nd: 3\n", "^yaml: line 3: could not find expected ':'$"},
 	{"#\n-\n{", "yaml: line 3: could not find expected ':'"},             // Issue #665
 	{"0: [:!00 \xef", "yaml: offset 9: incomplete UTF-8 octet sequence"}, // Issue #666
+	// https://github.com/yaml/libyaml/issues/68
+	{"double: \"quoted \\' scalar\"", "yaml: offset 16: found unknown escape character"},
 	{
 		"a: &a [00,00,00,00,00,00,00,00,00]\n" +
 			"b: &b [*a,*a,*a,*a,*a,*a,*a,*a,*a]\n" +
