@@ -312,6 +312,31 @@ var unmarshalTests = []struct {
 			},
 		},
 	},
+	// https://github.com/yaml/libyaml/pull/104.
+	{
+		"- [\"http://foo\"]",
+		[]interface{}{
+			[]interface{}{"http://foo"},
+		},
+	},
+	{
+		"- { \"foo::\": bar }",
+		[]interface{}{
+			map[string]interface{}{"foo::": "bar"},
+		},
+	},
+	{
+		"- [ \":foo\" ]",
+		[]interface{}{
+			[]interface{}{":foo"},
+		},
+	},
+	{
+		"- [ \"foo:\" ]",
+		[]interface{}{
+			[]interface{}{"foo:"},
+		},
+	},
 
 	// Block sequence
 	{
