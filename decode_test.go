@@ -274,6 +274,45 @@ var unmarshalTests = []struct {
 		"seq: [A,1,C]",
 		map[string]interface{}{"seq": []interface{}{"A", 1, "C"}},
 	},
+	// Question marks in plain scalars in flow collections
+	//
+	// https://github.com/yaml/yaml-test-suite/issues/62.
+	// https://github.com/yaml/libyaml/pull/105.
+	{
+		"- [a?string]",
+		[]interface{}{
+			[]interface{}{
+				"a?string",
+			},
+		},
+	},
+	{
+
+		"- a?string\n- another ? string\n- key: value?\n- [a?string]\n- [another ? string]\n- {key: value? }\n- {key: value?}\n- {key?: value }\n",
+		[]interface{}{
+			"a?string",
+			"another ? string",
+			map[string]interface{}{
+				"key": "value?",
+			},
+			[]interface{}{
+				"a?string",
+			},
+			[]interface{}{
+				"another ? string",
+			},
+			map[string]interface{}{
+				"key": "value?",
+			},
+			map[string]interface{}{
+				"key": "value?",
+			},
+			map[string]interface{}{
+				"key?": "value",
+			},
+		},
+	},
+
 	// Block sequence
 	{
 		"seq:\n - A\n - B",
