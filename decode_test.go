@@ -533,6 +533,10 @@ var unmarshalTests = []struct {
 		"v:\n- A\n- 'B\n\n  C'\n",
 		map[string][]string{"v": {"A", "B\nC"}},
 	},
+	{
+		"escaped slash: \"a\\/b\"",
+		map[interface{}]interface{}{"escaped slash": "a/b"},
+	},
 
 	// Explicit tags.
 	{
