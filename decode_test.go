@@ -1066,7 +1066,7 @@ var unmarshalErrorTests = []struct {
 	{"v: !!float 'error'", "yaml: cannot decode !!str `error` as a !!float"},
 	{"v: [A,", "yaml: line 1: did not find expected node content"},
 	{"v:\n- [A,", "yaml: line 2: did not find expected node content"},
-	{"a:\n- b: *,", "yaml: line 2: did not find expected alphabetic or numeric character"},
+	{"a:\n- b: *,", "yaml: line 2:5: did not find expected alphabetic or numeric character"},
 	{"a: *b\n", "yaml: line 1: unknown anchor \"b\" referenced"},
 	{"a: &a\n  b: *a\n", "yaml: line 2: anchor \"a\" value contains itself"},
 	{"value: -", "yaml: block sequence entries are not allowed in this context"},
@@ -1077,8 +1077,8 @@ var unmarshalErrorTests = []struct {
 	{"%TAG !%79! tag:yaml.org,2002:\n---\nv: !%79!int '1'", "yaml: did not find expected whitespace"},
 	{"a:\n  1:\nb\n  2:", ".*could not find expected ':'"},
 	{"a: 1\nb: 2\nc 2\nd: 3\n", "^yaml: line 3: could not find expected ':'$"},
-	{"#\n-\n{", "yaml: line 3: could not find expected ':'"},   // Issue #665
-	{"0: [:!00 \xef", "yaml: incomplete UTF-8 octet sequence"}, // Issue #666
+	{"#\n-\n{", "yaml: line 3: could not find expected ':'"},             // Issue #665
+	{"0: [:!00 \xef", "yaml: offset 9: incomplete UTF-8 octet sequence"}, // Issue #666
 	{
 		"a: &a [00,00,00,00,00,00,00,00,00]\n" +
 			"b: &b [*a,*a,*a,*a,*a,*a,*a,*a,*a]\n" +
