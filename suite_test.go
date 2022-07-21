@@ -156,6 +156,14 @@ func TestSuite(t *testing.T) {
 		"DK95": {},
 		"FP8R": {},
 		"DK3J": {},
+
+		// For some reason, go-yaml authors decided to not read tokens after document end.
+		//
+		// https://github.com/go-yaml/yaml/commit/18e5f12b39cb93b31a249fb7115b9bbf6162aeeb
+		"BS4K": {},
+		"4H7K": {},
+		"3HFZ": {},
+		"KS4U": {},
 	}
 
 	for _, file := range files {
