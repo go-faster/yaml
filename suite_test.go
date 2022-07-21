@@ -23,6 +23,7 @@ type SuiteTest struct {
 	Fail bool   `json:"fail" yaml:"fail"`
 	Skip bool   `json:"skip" yaml:"skip"`
 	YAML string `json:"yaml" yaml:"yaml"`
+	JSON string `json:"json" yaml:"json"`
 }
 
 type TestFile struct {
