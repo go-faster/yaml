@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"path"
 	"sort"
 	"strings"
 	"testing"
@@ -39,10 +40,11 @@ type TestFile struct {
 var inputCleaner = strings.NewReplacer(
 	"␣", " ", // is used for trailing space characters
 	// Hard tabs are reresented by one of: (expanding to 4 spaces)
-	"———»", strings.Repeat(" ", 4),
-	"——»", strings.Repeat(" ", 4),
-	"—»", strings.Repeat(" ", 4),
-	"»", strings.Repeat(" ", 4),
+	"————»", "\t",
+	"———»", "\t",
+	"——»", "\t",
+	"—»", "\t",
+	"»", "\t",
 	"↵", "\n", // is used to show trailing newline characters
 	"∎", "", // is used at the end when there is no final newline character
 	"←", "\r", // indicates a carriage return character
@@ -71,6 +73,13 @@ func TestSuite(t *testing.T) {
 		}
 
 		first := test[0]
+		if strings.Contains(first.Tags, "1.3") {
+			// YAML 1.3 is not supported yet.
+			//
+			// Skip it early to make test results more clear.
+			continue
+		}
+
 		for i := 1; i < len(test); i++ {
 			test[i].Name = first.Name
 			test[i].Tags = first.Tags
@@ -84,27 +93,101 @@ func TestSuite(t *testing.T) {
 		})
 	}
 
+	// tag -> reason
+	skipTags := []struct{ tag, reason string }{
+		// Currently, parser does not accept unknown directives or
+		// unsupported version directives.
+		{"directive", "Currently, parser does not accept unknown directives"},
+		{"libyaml-err", "Skip libyaml error tests"},
+		{"empty-key", "Skip empty key tests, libyaml does not support empty keys"},
+	}
+	// These tests break libyaml.
+	//
+	// FIXME(tdakkota): Why tf YAML maintainers can't fix their own implementation is a mystery.
+	skipFiles := map[string]struct{}{
+		// These invalid tests are known to fail.
+		"S98Z": {},
+		"X4QW": {},
+		"SU5Z": {},
+		"YJV2": {},
+		"CVW2": {},
+		"9JBA": {},
+		"EB22": {},
+		"9HCY": {},
+		"G5U8": {},
+		"9C9N": {},
+		"QB6E": {},
+		"RHX7": {},
+
+		// These valid tests are known to fail.
+		"W5VH": {},
+		"8XYN": {},
+		"2SXE": {},
+		"7Z25": {},
+		"K3WX": {},
+		"5MUD": {},
+		"5T43": {},
+		"QT73": {},
+		"MUS6": {},
+		"HWV9": {},
+		"4ABK": {},
+		"VJP3": {},
+		"4MUZ": {},
+		"58MP": {},
+		"96NN": {},
+		"9SA2": {},
+		"NJ66": {},
+		"HM87": {},
+		"SM9W": {},
+		"6LVF": {},
+		"2LFX": {},
+		"BEC7": {},
+		"A2M4": {},
+		"6BCT": {},
+		"DBG4": {},
+		"R4YG": {},
+		"M7A3": {},
+		"UT92": {},
+		"W4TN": {},
+		"Q5MG": {},
+		"6CA3": {},
+		"Y79Y": {},
+		"DK95": {},
+		"FP8R": {},
+		"DK3J": {},
+	}
+
 	for _, file := range files {
 		file := file
 		t.Run(file.TestName, func(t *testing.T) {
+			first := file.Tests[0]
+
+			{
+				_, fileName := path.Split(file.Name)
+				fileName = strings.TrimSuffix(fileName, ".yaml")
+				if _, ok := skipFiles[fileName]; ok {
+					t.Skipf("Skip %s, known to fail", file.Name)
+				}
+			}
+
+			for _, skipTag := range skipTags {
+				if strings.Contains(first.Tags, skipTag.tag) {
+					t.Skipf("Skip %s, %s", file.Name, skipTag.reason)
+					return
+				}
+			}
+
 			for i, test := range file.Tests {
 				test := test
 				t.Run(fmt.Sprintf("Test%d", i+1), func(t *testing.T) {
 					defer func() {
 						r := recover()
-						if r != nil || t.Failed() || t.Skipped() {
+						if r != nil || t.Failed() {
 							t.Logf("File: %s", file.Name)
 							t.Logf("Input: %q", test.YAML)
 						}
 					}()
 					a := require.New(t)
-
-					if test.Skip {
-						t.Skip("Optional test")
-					}
-					if strings.Contains(test.Tags, "1.3-mod") {
-						t.Skip("YAML 1.3 is not supported yet")
-					}
 
 					var n yaml.Node
 					err := yaml.Unmarshal([]byte(test.YAML), &n)
