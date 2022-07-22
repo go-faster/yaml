@@ -274,6 +274,70 @@ var unmarshalTests = []struct {
 		"seq: [A,1,C]",
 		map[string]interface{}{"seq": []interface{}{"A", 1, "C"}},
 	},
+	// Question marks in plain scalars in flow collections
+	//
+	// https://github.com/yaml/yaml-test-suite/issues/62.
+	// https://github.com/yaml/libyaml/pull/105.
+	{
+		"- [a?string]",
+		[]interface{}{
+			[]interface{}{
+				"a?string",
+			},
+		},
+	},
+	{
+
+		"- a?string\n- another ? string\n- key: value?\n- [a?string]\n- [another ? string]\n- {key: value? }\n- {key: value?}\n- {key?: value }\n",
+		[]interface{}{
+			"a?string",
+			"another ? string",
+			map[string]interface{}{
+				"key": "value?",
+			},
+			[]interface{}{
+				"a?string",
+			},
+			[]interface{}{
+				"another ? string",
+			},
+			map[string]interface{}{
+				"key": "value?",
+			},
+			map[string]interface{}{
+				"key": "value?",
+			},
+			map[string]interface{}{
+				"key?": "value",
+			},
+		},
+	},
+	// https://github.com/yaml/libyaml/pull/104.
+	{
+		"- [\"http://foo\"]",
+		[]interface{}{
+			[]interface{}{"http://foo"},
+		},
+	},
+	{
+		"- { \"foo::\": bar }",
+		[]interface{}{
+			map[string]interface{}{"foo::": "bar"},
+		},
+	},
+	{
+		"- [ \":foo\" ]",
+		[]interface{}{
+			[]interface{}{":foo"},
+		},
+	},
+	{
+		"- [ \"foo:\" ]",
+		[]interface{}{
+			[]interface{}{"foo:"},
+		},
+	},
+
 	// Block sequence
 	{
 		"seq:\n - A\n - B",
@@ -533,6 +597,10 @@ var unmarshalTests = []struct {
 		"v:\n- A\n- 'B\n\n  C'\n",
 		map[string][]string{"v": {"A", "B\nC"}},
 	},
+	{
+		"escaped slash: \"a\\/b\"",
+		map[interface{}]interface{}{"escaped slash": "a/b"},
+	},
 
 	// Explicit tags.
 	{
@@ -554,6 +622,11 @@ var unmarshalTests = []struct {
 	{
 		"%TAG !y! tag:yaml.org,2002:\n---\nv: !y!int '1'",
 		map[string]interface{}{"v": 1},
+	},
+	// https://github.com/yaml/libyaml/pull/179.
+	{
+		"{\n  foo : !!str,\n  !!str : bar,\n}\n",
+		map[string]interface{}{"foo": "", "": "bar"},
 	},
 
 	// Non-specific tag (Issue #75)
@@ -1091,6 +1164,9 @@ var unmarshalErrorTests = []struct {
 			"i: &i [*h,*h,*h,*h,*h,*h,*h,*h,*h]\n",
 		"yaml: line 2: document contains excessive aliasing",
 	},
+
+	// https://github.com/yaml/libyaml/issues/68
+	{"double: \"quoted \\' scalar\"", "yaml: offset 16: found unknown escape character"},
 }
 
 func TestUnmarshalErrors(t *testing.T) {
