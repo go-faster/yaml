@@ -3,6 +3,7 @@ package yaml_test
 import (
 	"embed"
 	"fmt"
+	"io"
 	"io/fs"
 	"path"
 	"sort"
@@ -96,9 +97,6 @@ func TestSuite(t *testing.T) {
 
 	// tag -> reason
 	skipTags := []struct{ tag, reason string }{
-		// Currently, parser does not accept unknown directives or
-		// unsupported version directives.
-		{"directive", "Currently, parser does not accept unknown directives"},
 		{"libyaml-err", "Skip libyaml error tests"},
 		{"empty-key", "Skip empty key tests, libyaml does not support empty keys"},
 	}
@@ -157,13 +155,9 @@ func TestSuite(t *testing.T) {
 		"FP8R": {},
 		"DK3J": {},
 
-		// For some reason, go-yaml authors decided to not read tokens after document end.
-		//
-		// https://github.com/go-yaml/yaml/commit/18e5f12b39cb93b31a249fb7115b9bbf6162aeeb
-		"BS4K": {},
-		"4H7K": {},
-		"3HFZ": {},
-		"KS4U": {},
+		// Currently, parser does not accept unknown directives or
+		// unsupported version directives.
+		"ZYU8": {},
 	}
 
 	for _, file := range files {
@@ -196,10 +190,24 @@ func TestSuite(t *testing.T) {
 							t.Logf("Input: %q", test.YAML)
 						}
 					}()
+
 					a := require.New(t)
 
-					var n yaml.Node
-					err := yaml.Unmarshal([]byte(test.YAML), &n)
+					check := func(s string) error {
+						var body yaml.Node
+						d := yaml.NewDecoder(strings.NewReader(s))
+						for {
+							err := d.Decode(&body)
+							if err == io.EOF {
+								return nil
+							}
+							if err != nil {
+								return err
+							}
+						}
+					}
+
+					err := check(test.YAML)
 					if test.Fail {
 						a.Error(err, "should fail")
 						return
