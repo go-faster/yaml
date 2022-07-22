@@ -39,6 +39,8 @@ type TestFile struct {
 //	of certain characters that would be otherwise hard to read.
 //
 // So, we need to replace them with their ASCII equivalents.
+//
+// https://github.com/yaml/yaml-test-suite/blob/main/bin/YAMLTestSuite.pm#L103-L115.
 var inputCleaner = strings.NewReplacer(
 	"␣", " ", // is used for trailing space characters
 	// Hard tabs are reresented by one of: (expanding to 4 spaces)
@@ -47,10 +49,10 @@ var inputCleaner = strings.NewReplacer(
 	"——»", "\t",
 	"—»", "\t",
 	"»", "\t",
-	"↵", "\n", // is used to show trailing newline characters
+	"↵", "", // is used to show trailing newline characters
 	"∎", "", // is used at the end when there is no final newline character
 	"←", "\r", // indicates a carriage return character
-	"⇔", "\xEF\xBB\xBF", // indicates a byte order mark (BOM) character
+	"⇔", "\xFE\xFF", // indicates a byte order mark (BOM) character
 )
 
 func readSuite(t require.TestingT) (files []TestFile) {
