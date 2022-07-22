@@ -53,14 +53,13 @@ var inputCleaner = strings.NewReplacer(
 	"⇔", "\xEF\xBB\xBF", // indicates a byte order mark (BOM) character
 )
 
-func TestSuite(t *testing.T) {
+func readSuite(t require.TestingT) (files []TestFile) {
 	a := require.New(t)
 
 	matches, err := fs.Glob(suite, "_testdata/suite/*.yaml")
 	a.NoError(err)
 	sort.Strings(matches)
 
-	var files []TestFile
 	for _, match := range matches {
 		file, err := suite.ReadFile(match)
 		a.NoError(err)
@@ -94,6 +93,12 @@ func TestSuite(t *testing.T) {
 			Tests:    test,
 		})
 	}
+
+	return files
+}
+
+func TestSuite(t *testing.T) {
+	files := readSuite(t)
 
 	// tag -> reason
 	skipTags := []struct{ tag, reason string }{
