@@ -27,7 +27,8 @@ func writeJSONMapping(e *jx.Encoder, n *Node) error {
 		case AliasNode:
 			return resolveKey(k.Alias)
 		default:
-			panic("unexpected node kind")
+			fail(errors.New("unexpected node kind"))
+			return "" // unreachable
 		}
 	}
 
@@ -95,7 +96,9 @@ func writeJSONScalar(e *jx.Encoder, n *Node) error {
 	}
 }
 
-func writeJSON(e *jx.Encoder, n *Node) error {
+func writeJSON(e *jx.Encoder, n *Node) (rerr error) {
+	defer handleErr(&rerr)
+
 	switch n.Kind {
 	case DocumentNode:
 		switch len(n.Content) {
