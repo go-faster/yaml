@@ -11,8 +11,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-faster/jx"
 	"github.com/stretchr/testify/require"
+
+	"github.com/go-faster/jx"
 
 	yaml "github.com/go-faster/yamlx"
 )
@@ -168,15 +169,21 @@ func TestSuite(t *testing.T) {
 		// unsupported version directives.
 		"ZYU8": {},
 	}
+	skipJSON := map[string]struct{}{
+		// Scanner assumes that '?' is not part of a key.
+		"652Z": {},
+		// Parser/Decoder does not pass tag information, so we encode value as string, but integer is expected.
+		"S4JQ": {},
+	}
 
 	for _, file := range files {
 		file := file
 		t.Run(file.TestName, func(t *testing.T) {
 			first := file.Tests[0]
+			_, fileName := path.Split(file.Name)
+			fileName = strings.TrimSuffix(fileName, ".yaml")
 
 			{
-				_, fileName := path.Split(file.Name)
-				fileName = strings.TrimSuffix(fileName, ".yaml")
 				if _, ok := skipFiles[fileName]; ok {
 					t.Skipf("Skip %s, known to fail", file.Name)
 				}
@@ -224,7 +231,7 @@ func TestSuite(t *testing.T) {
 					}
 					a.NoError(err)
 
-					if test.JSON != "" {
+					if _, ok := skipJSON[fileName]; !ok && test.JSON != "" {
 						var expected []json.RawMessage
 						d := json.NewDecoder(strings.NewReader(test.JSON))
 						for {
