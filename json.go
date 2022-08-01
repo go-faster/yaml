@@ -35,6 +35,7 @@ func writeJSONMapping(e *jx.Encoder, n *Node) error {
 	for i := 0; i < len(n.Content); i += 2 {
 		k, v := n.Content[i], n.Content[i+1]
 
+		// TODO(tdakkota): probably, we should just convert key to string.
 		if tag := k.ShortTag(); tag != strTag {
 			return errors.Errorf("can't use tag %q as a key", tag)
 		}
