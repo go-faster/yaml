@@ -2,6 +2,7 @@ package yaml_test
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-faster/jx"
 	"github.com/stretchr/testify/require"
 
 	yaml "github.com/go-faster/yamlx"
@@ -200,26 +202,50 @@ func TestSuite(t *testing.T) {
 
 					a := require.New(t)
 
-					check := func(s string) error {
-						var body yaml.Node
+					check := func(s string) (r []yaml.Node, _ error) {
 						d := yaml.NewDecoder(strings.NewReader(s))
 						for {
-							err := d.Decode(&body)
+							var doc yaml.Node
+							err := d.Decode(&doc)
 							if err == io.EOF {
-								return nil
+								return r, nil
 							}
 							if err != nil {
-								return err
+								return nil, err
 							}
+							r = append(r, doc)
 						}
 					}
 
-					err := check(test.YAML)
+					docs, err := check(test.YAML)
 					if test.Fail {
 						a.Error(err, "should fail")
 						return
 					}
 					a.NoError(err)
+
+					if test.JSON != "" {
+						var expected []json.RawMessage
+						d := json.NewDecoder(strings.NewReader(test.JSON))
+						for {
+							var doc json.RawMessage
+							err := d.Decode(&doc)
+							if err == io.EOF {
+								break
+							}
+							a.NoError(err)
+							expected = append(expected, doc)
+						}
+						a.Equal(len(expected), len(docs))
+
+						for i, doc := range docs {
+							jsonDoc := expected[i]
+
+							var e jx.Encoder
+							a.NoError(doc.EncodeJSON(&e))
+							a.JSONEq(string(jsonDoc), e.String())
+						}
+					}
 				})
 			}
 		})
