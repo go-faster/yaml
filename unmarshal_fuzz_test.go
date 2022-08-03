@@ -11,14 +11,8 @@ func FuzzUnmarshal(f *testing.F) {
 
 	// TODO(tdakkota): move to addFuzzingCorpus, currently DecodeEncodeDecode fuzzing fails
 	//  due to some marshaling issues
-	for _, file := range readSuite(f) {
-		for _, test := range file.Tests {
-			f.Add([]byte(test.YAML))
-			if test.JSON != "" {
-				f.Add([]byte(test.JSON))
-			}
-		}
-	}
+	addYAMLSuiteCorpus(f)
+	addJSONSuiteCorpus(f)
 
 	f.Fuzz(func(t *testing.T, input []byte) {
 		var v interface{}

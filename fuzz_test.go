@@ -12,6 +12,8 @@ var _ testingF = (*testing.F)(nil)
 
 type testingF interface {
 	Add(args ...interface{})
+	Errorf(format string, args ...interface{})
+	FailNow()
 }
 
 func addFuzzingCorpus(f testingF) {
