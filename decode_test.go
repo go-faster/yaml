@@ -25,6 +25,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"testing/iotest"
 	"time"
 
 	"github.com/stretchr/testify/require"
@@ -1072,15 +1073,22 @@ func TestDecoderSingleDocument(t *testing.T) {
 		item := item
 		t.Run(fmt.Sprintf("Test%d", i+1), func(t *testing.T) {
 			t.Logf("Input: %q", item.data)
-			a := require.New(t)
 
-			typ := reflect.ValueOf(item.value).Type()
-			value := reflect.New(typ)
-			err := yaml.NewDecoder(strings.NewReader(item.data)).Decode(value.Interface())
-			if _, ok := err.(*yaml.TypeError); !ok {
-				a.NoError(err)
-			}
-			a.Equal(item.value, value.Elem().Interface())
+			testReader(t, func(wrap func(io.Reader) io.Reader) func(t *testing.T) {
+				return func(t *testing.T) {
+					a := require.New(t)
+
+					typ := reflect.ValueOf(item.value).Type()
+					value := reflect.New(typ)
+
+					r := wrap(strings.NewReader(item.data))
+					err := yaml.NewDecoder(r).Decode(value.Interface())
+					if _, ok := err.(*yaml.TypeError); !ok {
+						a.NoError(err)
+					}
+					a.Equal(item.value, value.Elem().Interface())
+				}
+			})
 		})
 	}
 }
@@ -1114,20 +1122,26 @@ func TestDecoder(t *testing.T) {
 		item := item
 		t.Run(fmt.Sprintf("Test%d", i+1), func(t *testing.T) {
 			t.Logf("Input: %q", item.data)
-			a := require.New(t)
-
-			var values []interface{}
-			dec := yaml.NewDecoder(strings.NewReader(item.data))
-			for {
-				var value interface{}
-				err := dec.Decode(&value)
-				if err == io.EOF {
-					break
+			testReader(t, func(wrap func(io.Reader) io.Reader) func(t *testing.T) {
+				return func(t *testing.T) {
+					a := require.New(t)
+					var (
+						values []interface{}
+						r      = wrap(strings.NewReader(item.data))
+						dec    = yaml.NewDecoder(r)
+					)
+					for {
+						var value interface{}
+						err := dec.Decode(&value)
+						if err == io.EOF {
+							break
+						}
+						a.NoError(err)
+						values = append(values, value)
+					}
+					a.Equal(item.values, values)
 				}
-				a.NoError(err)
-				values = append(values, value)
-			}
-			a.Equal(item.values, values)
+			})
 		})
 	}
 }
