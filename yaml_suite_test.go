@@ -16,7 +16,7 @@ import (
 	yaml "github.com/go-faster/yamlx"
 )
 
-//go:embed _testdata/yaml_suite
+//go:embed testdata/yaml_suite
 var yamlSuite embed.FS
 
 type YAMLSuiteTest struct {
@@ -59,7 +59,7 @@ var inputCleaner = strings.NewReplacer(
 func readYAMLSuite(t require.TestingT) (r []YAMLSuiteFile) {
 	a := require.New(t)
 
-	dir := path.Join("_testdata", "yaml_suite")
+	dir := path.Join("testdata", "yaml_suite")
 	files, err := yamlSuite.ReadDir(dir)
 	a.NoError(err)
 	a.NotEmpty(files)

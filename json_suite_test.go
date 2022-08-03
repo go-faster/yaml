@@ -12,7 +12,7 @@ import (
 	yaml "github.com/go-faster/yamlx"
 )
 
-//go:embed _testdata/json_suite
+//go:embed testdata/json_suite
 var jsonSuite embed.FS
 
 type JSONSuiteTest struct {
@@ -34,7 +34,7 @@ func readJSONSuite(t require.TestingT) (r []JSONSuiteTest) {
 	// By Nicolas Seriot (https://github.com/nst)
 	a := require.New(t)
 
-	dir := path.Join("_testdata", "json_suite")
+	dir := path.Join("testdata", "json_suite")
 	files, err := jsonSuite.ReadDir(dir)
 	a.NoError(err)
 	a.NotEmpty(files)
