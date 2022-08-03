@@ -25,6 +25,8 @@ package yaml
 import (
 	"bytes"
 	"fmt"
+	"unicode/utf16"
+	"unicode/utf8"
 )
 
 // Introduction
@@ -1607,11 +1609,11 @@ func yaml_parser_scan_to_next_token(parser *yaml_parser_t) bool {
 // Scan a YAML-DIRECTIVE or TAG-DIRECTIVE token.
 //
 // Scope:
-//      %YAML    1.1    # a comment \n
-//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//      %TAG    !yaml!  tag:yaml.org,2002:  \n
-//      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //
+//	%YAML    1.1    # a comment \n
+//	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//	%TAG    !yaml!  tag:yaml.org,2002:  \n
+//	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 func yaml_parser_scan_directive(parser *yaml_parser_t, token *yaml_token_t) bool {
 	// Eat '%'.
 	start_mark := parser.mark
@@ -1712,11 +1714,11 @@ func yaml_parser_scan_directive(parser *yaml_parser_t, token *yaml_token_t) bool
 // Scan the directive name.
 //
 // Scope:
-//      %YAML   1.1     # a comment \n
-//       ^^^^
-//      %TAG    !yaml!  tag:yaml.org,2002:  \n
-//       ^^^
 //
+//	%YAML   1.1     # a comment \n
+//	 ^^^^
+//	%TAG    !yaml!  tag:yaml.org,2002:  \n
+//	 ^^^
 func yaml_parser_scan_directive_name(parser *yaml_parser_t, start_mark yaml_mark_t, name *[]byte) bool {
 	// Consume the directive name.
 	if parser.unread < 1 && !yaml_parser_update_buffer(parser, 1) {
@@ -1751,8 +1753,9 @@ func yaml_parser_scan_directive_name(parser *yaml_parser_t, start_mark yaml_mark
 // Scan the value of VERSION-DIRECTIVE.
 //
 // Scope:
-//      %YAML   1.1     # a comment \n
-//           ^^^^^^
+//
+//	%YAML   1.1     # a comment \n
+//	     ^^^^^^
 func yaml_parser_scan_version_directive_value(parser *yaml_parser_t, start_mark yaml_mark_t, major, minor *int8) bool {
 	// Eat whitespaces.
 	if parser.unread < 1 && !yaml_parser_update_buffer(parser, 1) {
@@ -1790,10 +1793,11 @@ const max_number_length = 2
 // Scan the version number of VERSION-DIRECTIVE.
 //
 // Scope:
-//      %YAML   1.1     # a comment \n
-//              ^
-//      %YAML   1.1     # a comment \n
-//                ^
+//
+//	%YAML   1.1     # a comment \n
+//	        ^
+//	%YAML   1.1     # a comment \n
+//	          ^
 func yaml_parser_scan_version_directive_number(parser *yaml_parser_t, start_mark yaml_mark_t, number *int8) bool {
 	// Repeat while the next character is digit.
 	if parser.unread < 1 && !yaml_parser_update_buffer(parser, 1) {
@@ -1826,9 +1830,9 @@ func yaml_parser_scan_version_directive_number(parser *yaml_parser_t, start_mark
 // Scan the value of a TAG-DIRECTIVE token.
 //
 // Scope:
-//      %TAG    !yaml!  tag:yaml.org,2002:  \n
-//          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //
+//	%TAG    !yaml!  tag:yaml.org,2002:  \n
+//	    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 func yaml_parser_scan_tag_directive_value(parser *yaml_parser_t, start_mark yaml_mark_t, handle, prefix *[]byte) bool {
 	var handle_value, prefix_value []byte
 
@@ -2432,6 +2436,21 @@ func yaml_parser_scan_block_scalar_breaks(parser *yaml_parser_t, indent *int, br
 	return true
 }
 
+func appendRune(p []byte, r rune) []byte {
+	buf := make([]byte, 4)
+	n := utf8.EncodeRune(buf, r)
+	return append(p, buf[:n]...)
+}
+
+func appendSurrogate(p *[]byte, r1, r2 rune) bool {
+	combined := utf16.DecodeRune(r1, r2)
+	if combined == utf8.RuneError {
+		return false
+	}
+	*p = appendRune(*p, combined)
+	return true
+}
+
 // Scan a quoted scalar.
 func yaml_parser_scan_flow_scalar(parser *yaml_parser_t, token *yaml_token_t, single bool) bool {
 	// Eat the left quote.
@@ -2468,6 +2487,9 @@ func yaml_parser_scan_flow_scalar(parser *yaml_parser_t, token *yaml_token_t, si
 
 		// Consume non-blank characters.
 		leading_blanks := false
+		// [yamlx] Flag for parsing surrogate pairs.
+		surrogate := false
+		first_surrogate := rune(0)
 		for !is_blankz(parser.buffer, parser.buffer_pos) {
 			if single && parser.buffer[parser.buffer_pos] == '\'' && parser.buffer[parser.buffer_pos+1] == '\'' {
 				// Is is an escaped single quote.
@@ -2554,7 +2576,7 @@ func yaml_parser_scan_flow_scalar(parser *yaml_parser_t, token *yaml_token_t, si
 
 				// Consume an arbitrary escape code.
 				if code_length > 0 {
-					var value int
+					var value rune
 
 					// Scan the character value.
 					if parser.unread < code_length && !yaml_parser_update_buffer(parser, code_length) {
@@ -2566,39 +2588,49 @@ func yaml_parser_scan_flow_scalar(parser *yaml_parser_t, token *yaml_token_t, si
 								start_mark, "did not find expected hexdecimal number")
 							return false
 						}
-						value = (value << 4) + as_hex(parser.buffer, parser.buffer_pos+k)
+						value = (value << 4) + rune(as_hex(parser.buffer, parser.buffer_pos+k))
 					}
 
-					// Check the value and write the character.
-					if (value >= 0xD800 && value <= 0xDFFF) || value > 0x10FFFF {
-						yaml_parser_set_scanner_error(parser, "while parsing a quoted scalar",
-							start_mark, "found invalid Unicode character escape code")
-						return false
-					}
-					if value <= 0x7F {
-						s = append(s, byte(value))
-					} else if value <= 0x7FF {
-						s = append(s, byte(0xC0+(value>>6)))
-						s = append(s, byte(0x80+(value&0x3F)))
-					} else if value <= 0xFFFF {
-						s = append(s, byte(0xE0+(value>>12)))
-						s = append(s, byte(0x80+((value>>6)&0x3F)))
-						s = append(s, byte(0x80+(value&0x3F)))
+					if utf16.IsSurrogate(value) {
+						if surrogate {
+							r1 := first_surrogate
+							surrogate = false
+							first_surrogate = 0
+							if !appendSurrogate(&s, r1, value) {
+								yaml_parser_set_scanner_error(parser, "while parsing a quoted scalar",
+									start_mark, "found invalid Unicode character escape code")
+							}
+						} else {
+							surrogate = true
+							first_surrogate = value
+						}
 					} else {
-						s = append(s, byte(0xF0+(value>>18)))
-						s = append(s, byte(0x80+((value>>12)&0x3F)))
-						s = append(s, byte(0x80+((value>>6)&0x3F)))
-						s = append(s, byte(0x80+(value&0x3F)))
+						// Check the value and write the character.
+						if !utf8.ValidRune(value) {
+							yaml_parser_set_scanner_error(parser, "while parsing a quoted scalar",
+								start_mark, "found invalid Unicode character escape code")
+							return false
+						}
+						s = utf8.AppendRune(s, value)
 					}
 
 					// Advance the pointer.
 					for k := 0; k < code_length; k++ {
 						skip(parser)
 					}
+				} else {
+					if surrogate {
+						surrogate = false
+						first_surrogate = 0
+					}
 				}
 			} else {
 				// It is a non-escaped non-blank character.
 				s = read(parser, s)
+				if surrogate {
+					surrogate = false
+					first_surrogate = 0
+				}
 			}
 			if parser.unread < 2 && !yaml_parser_update_buffer(parser, 2) {
 				return false
