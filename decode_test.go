@@ -601,6 +601,35 @@ var unmarshalTests = []struct {
 		"escaped slash: \"a\\/b\"",
 		map[interface{}]interface{}{"escaped slash": "a/b"},
 	},
+	// Quoted, with escaped surrogate pairs.
+	//
+	// See https://github.com/go-yaml/yaml/issues/279.
+	{`"\x41 \u0041 \U00000041"`, "A A A"},
+	// Encode as surrogate pair \u, with upper and case lower hexadecimal digits.
+	{`"\ud83d\ude04"`, "😄"},
+	{`"\ud83D\udE04"`, "😄"},
+	{`"\uD83D\uDE04"`, "😄"},
+	// Encode as one \U.
+	{`"\U0001f604"`, "😄"},
+	{`"\U0001F604"`, "😄"},
+	// Encode as surrogate pair \U.
+	{`"\U0000D83D\U0000DE04"`, "😄"},
+	{`"\uD83D\uDE04\uD83D\uDE04"`, "😄😄"},
+	{`"\U0001F604\U0001F604"`, "😄😄"},
+	{`"\U0000D83D\U0000DE04\U0000D83D\U0000DE04"`, "😄😄"},
+	{`"_\uD83D\uDE04_\uD83D\uDE04_"`, "_😄_😄_"},
+	{`"_\U0000D83D\U0000DE04_\U0000D83D\U0000DE04_"`, "_😄_😄_"},
+	{`"_\U0001F604_\U0001F604_"`, "_😄_😄_"},
+	{`"\u4e2d\u6587"`, "中文"},
+	{`"\U00004E2D\U00006587"`, "中文"},
+	{`"\ud83c\udff3\ufe0f\u200d\ud83c\udf08"`, "🏳️\u200d🌈"},
+	// Test emoji handling.
+	{`"Iñtërnâtiônàlizætiøn,💝🐹🌇⛔"`, "Iñtërnâtiônàlizætiøn,💝🐹🌇⛔"},
+	{`"_😄_😄_"`, "_😄_😄_"},
+	{`_😄_😄_`, "_😄_😄_"},
+	{`"中文"`, "中文"},
+	{`中文`, "中文"},
+	{"\"🏳️\u200d🌈\"", "🏳️\u200d🌈"},
 
 	// Explicit tags.
 	{
@@ -1167,6 +1196,11 @@ var unmarshalErrorTests = []struct {
 
 	// https://github.com/yaml/libyaml/issues/68
 	{"double: \"quoted \\' scalar\"", "yaml: offset 16: found unknown escape character"},
+
+	// Invalid surrogate pair.
+	{`"\ud800\ud800"`, "yaml: offset 9: found invalid Unicode character escape code"},
+	// Invalid Unicode.
+	{`"\U00FFFFFF"`, "yaml: offset 3: found invalid Unicode character escape code"},
 }
 
 func TestUnmarshalErrors(t *testing.T) {

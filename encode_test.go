@@ -445,6 +445,10 @@ var marshalTests = []struct {
 		map[string]string{"a": "你好"},
 		"a: 你好\n",
 	},
+	{
+		"你好",
+		"你好\n",
+	},
 
 	// Support encoding.TextMarshaler.
 	{
