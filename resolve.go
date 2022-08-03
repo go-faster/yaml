@@ -128,6 +128,16 @@ func resolvableTag(tag string) bool {
 
 var yamlStyleFloat = regexp.MustCompile(`^[-+]?(\.\d+|\d+(\.\d*)?)([eE][-+]?\d+)?$`)
 
+// convertIntSafe converts int64 value to int value.
+//
+// If int can't fit value, it returns the original value.
+func convertIntSafe(intv int64) interface{} {
+	if intv >= math.MinInt && intv <= math.MaxInt {
+		return int(intv)
+	}
+	return intv
+}
+
 func resolve(tag, in string) (rtag string, out interface{}) {
 	tag = shortTag(tag)
 	if !resolvableTag(tag) {
@@ -196,10 +206,7 @@ func resolve(tag, in string) (rtag string, out interface{}) {
 			plain := strings.ReplaceAll(in, "_", "")
 			intv, err := strconv.ParseInt(plain, 0, 64)
 			if err == nil {
-				if intv == int64(int(intv)) {
-					return intTag, int(intv)
-				}
-				return intTag, intv
+				return intTag, convertIntSafe(intv)
 			}
 			uintv, err := strconv.ParseUint(plain, 0, 64)
 			if err == nil {
@@ -214,10 +221,7 @@ func resolve(tag, in string) (rtag string, out interface{}) {
 			if strings.HasPrefix(plain, "0b") {
 				intv, err := strconv.ParseInt(plain[2:], 2, 64)
 				if err == nil {
-					if intv == int64(int(intv)) {
-						return intTag, int(intv)
-					}
-					return intTag, intv
+					return intTag, convertIntSafe(intv)
 				}
 				uintv, err := strconv.ParseUint(plain[2:], 2, 64)
 				if err == nil {
@@ -226,10 +230,7 @@ func resolve(tag, in string) (rtag string, out interface{}) {
 			} else if strings.HasPrefix(plain, "-0b") {
 				intv, err := strconv.ParseInt("-"+plain[3:], 2, 64)
 				if err == nil {
-					if intv == int64(int(intv)) {
-						return intTag, int(intv)
-					}
-					return intTag, intv
+					return intTag, convertIntSafe(intv)
 				}
 			}
 			// Octals as introduced in version 1.2 of the spec.
@@ -239,10 +240,7 @@ func resolve(tag, in string) (rtag string, out interface{}) {
 			if strings.HasPrefix(plain, "0o") {
 				intv, err := strconv.ParseInt(plain[2:], 8, 64)
 				if err == nil {
-					if intv == int64(int(intv)) {
-						return intTag, int(intv)
-					}
-					return intTag, intv
+					return intTag, convertIntSafe(intv)
 				}
 				uintv, err := strconv.ParseUint(plain[2:], 8, 64)
 				if err == nil {
@@ -251,10 +249,7 @@ func resolve(tag, in string) (rtag string, out interface{}) {
 			} else if strings.HasPrefix(plain, "-0o") {
 				intv, err := strconv.ParseInt("-"+plain[3:], 8, 64)
 				if err == nil {
-					if intv == int64(int(intv)) {
-						return intTag, int(intv)
-					}
-					return intTag, intv
+					return intTag, convertIntSafe(intv)
 				}
 			}
 		default:
