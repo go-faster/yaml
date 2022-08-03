@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/fs"
 	"path"
-	"sort"
 	"strings"
 	"testing"
 
@@ -18,10 +16,10 @@ import (
 	yaml "github.com/go-faster/yamlx"
 )
 
-//go:embed _testdata/suite
-var suite embed.FS
+//go:embed _testdata/yaml_suite
+var yamlSuite embed.FS
 
-type SuiteTest struct {
+type YAMLSuiteTest struct {
 	Name string `json:"name" yaml:"name"`
 	Tags string `json:"tags" yaml:"tags"`
 	Fail bool   `json:"fail" yaml:"fail"`
@@ -30,15 +28,15 @@ type SuiteTest struct {
 	JSON string `json:"json" yaml:"json"`
 }
 
-type TestFile struct {
+type YAMLSuiteFile struct {
 	Name     string
 	TestName string
-	Tests    []SuiteTest
+	Tests    []YAMLSuiteTest
 }
 
 // Suite README says (why tf did they do it, nobody wants to read suite tests):
 //
-// 	The YAML files use a number of non-ascii unicode characters to indicate the presence
+//	The YAML files use a number of non-ascii unicode characters to indicate the presence
 //	of certain characters that would be otherwise hard to read.
 //
 // So, we need to replace them with their ASCII equivalents.
@@ -58,19 +56,25 @@ var inputCleaner = strings.NewReplacer(
 	"⇔", "\xFE\xFF", // indicates a byte order mark (BOM) character
 )
 
-func readSuite(t require.TestingT) (files []TestFile) {
+func readYAMLSuite(t require.TestingT) (r []YAMLSuiteFile) {
 	a := require.New(t)
 
-	matches, err := fs.Glob(suite, "_testdata/suite/*.yaml")
+	dir := path.Join("_testdata", "yaml_suite")
+	files, err := yamlSuite.ReadDir(dir)
 	a.NoError(err)
-	sort.Strings(matches)
+	a.NotEmpty(files)
 
-	for _, match := range matches {
-		file, err := suite.ReadFile(match)
+	for _, f := range files {
+		if f.IsDir() || !strings.HasSuffix(f.Name(), ".yaml") {
+			continue
+		}
+
+		file := path.Join(dir, f.Name())
+		data, err := yamlSuite.ReadFile(file)
 		a.NoError(err)
 
-		var test []SuiteTest
-		a.NoError(yaml.Unmarshal(file, &test))
+		var test []YAMLSuiteTest
+		a.NoError(yaml.Unmarshal(data, &test))
 		a.NotEmpty(test)
 
 		// Clean up the input.
@@ -92,18 +96,29 @@ func readSuite(t require.TestingT) (files []TestFile) {
 			test[i].Skip = first.Skip
 		}
 
-		files = append(files, TestFile{
-			Name:     match,
+		r = append(r, YAMLSuiteFile{
+			Name:     file,
 			TestName: first.Name,
 			Tests:    test,
 		})
 	}
 
-	return files
+	return r
 }
 
-func TestSuite(t *testing.T) {
-	files := readSuite(t)
+func addYAMLSuiteCorpus(f testingF) {
+	for _, file := range readYAMLSuite(f) {
+		for _, test := range file.Tests {
+			f.Add([]byte(test.YAML))
+			if test.JSON != "" {
+				f.Add([]byte(test.JSON))
+			}
+		}
+	}
+}
+
+func TestYAMLSuite(t *testing.T) {
+	files := readYAMLSuite(t)
 
 	// tag -> reason
 	skipTags := []struct{ tag, reason string }{
