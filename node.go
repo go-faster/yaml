@@ -45,17 +45,16 @@ const (
 //
 // For example:
 //
-//     var person struct {
-//             Name    string
-//             Address yaml.Node
-//     }
-//     err := yaml.Unmarshal(data, &person)
+//	var person struct {
+//	        Name    string
+//	        Address yaml.Node
+//	}
+//	err := yaml.Unmarshal(data, &person)
 //
 // Or by itself:
 //
-//     var person Node
-//     err := yaml.Unmarshal(data, &person)
-//
+//	var person Node
+//	err := yaml.Unmarshal(data, &person)
 type Node struct {
 	// Kind defines whether the node is a document, a mapping, a sequence,
 	// a scalar value, or an alias to another node. The specific data type of

@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/go-faster/jx"
+
 	yaml "github.com/go-faster/yamlx"
 )
 
@@ -83,13 +85,17 @@ func TestJSONSuite(t *testing.T) {
 				t.Skip("YAML does not allow control characters in strings")
 				return
 			}
+			a := assert.New(t)
 			data := tt.Data
 
 			var n yaml.Node
 			err := yaml.Unmarshal(data, &n)
 			switch action := tt.Action; action {
 			case Accept:
-				assert.NoError(t, err, "%#v", string(data))
+				a.NoError(err, "%#v", string(data))
+				e := jx.GetEncoder()
+				a.NoError(n.EncodeJSON(e))
+				a.JSONEq(string(data), e.String())
 			case Undefined, Reject: // Actually, some invalid JSON is accepted by the YAML parser.
 				if err == nil {
 					t.Log("Accept")
