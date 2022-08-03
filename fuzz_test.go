@@ -69,6 +69,11 @@ func addFuzzingCorpus(f testingF) {
 
 func FuzzDecodeEncodeDecode(f *testing.F) {
 	addFuzzingCorpus(f)
+	for _, tt := range readJSONSuite(f) {
+		if tt.Action == Accept {
+			f.Add(tt.Data)
+		}
+	}
 
 	f.Fuzz(func(t *testing.T, input []byte) {
 		var (

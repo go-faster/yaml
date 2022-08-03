@@ -106,17 +106,6 @@ func readYAMLSuite(t require.TestingT) (r []YAMLSuiteFile) {
 	return r
 }
 
-func addYAMLSuiteCorpus(f testingF) {
-	for _, file := range readYAMLSuite(f) {
-		for _, test := range file.Tests {
-			f.Add([]byte(test.YAML))
-			if test.JSON != "" {
-				f.Add([]byte(test.JSON))
-			}
-		}
-	}
-}
-
 func TestYAMLSuite(t *testing.T) {
 	files := readYAMLSuite(t)
 

@@ -64,12 +64,6 @@ func readJSONSuite(t require.TestingT) (r []JSONSuiteTest) {
 	return r
 }
 
-func addJSONSuiteCorpus(f testingF) {
-	for _, tt := range readJSONSuite(f) {
-		f.Add(tt.Data)
-	}
-}
-
 func TestJSONSuite(t *testing.T) {
 	// Time to break the big lie about YAML and JSON compatibility.
 	skipControlCharactes := map[string]struct{}{
