@@ -104,6 +104,11 @@ func (p *parser) peek() yaml_event_type_t {
 }
 
 func (p *parser) fail() {
+	if err := p.parser.read_error; err != nil {
+		fail(err)
+		return
+	}
+
 	var (
 		line, column int
 	)

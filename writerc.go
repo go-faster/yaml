@@ -41,6 +41,7 @@ func yaml_emitter_flush(emitter *yaml_emitter_t) bool {
 	}
 
 	if err := emitter.write_handler(emitter, emitter.buffer[:emitter.buffer_pos]); err != nil {
+		emitter.write_error = err
 		return yaml_emitter_set_writer_error(emitter, "write error: "+err.Error())
 	}
 	emitter.buffer_pos = 0

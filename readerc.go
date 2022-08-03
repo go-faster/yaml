@@ -101,6 +101,7 @@ func yaml_parser_update_raw_buffer(parser *yaml_parser_t) bool {
 	if err == io.EOF {
 		parser.eof = true
 	} else if err != nil {
+		parser.read_error = err
 		return yaml_parser_set_reader_error(parser, "input error: "+err.Error(), parser.offset, -1)
 	}
 	return true

@@ -1132,15 +1132,10 @@ func TestDecoder(t *testing.T) {
 	}
 }
 
-type errReader struct{}
-
-func (errReader) Read([]byte) (int, error) {
-	return 0, errors.New("some read error")
-}
-
 func TestDecoderReadError(t *testing.T) {
-	err := yaml.NewDecoder(errReader{}).Decode(&struct{}{})
-	require.EqualError(t, err, "yaml: input error: some read error")
+	var testError = errors.New("some read error")
+	err := yaml.NewDecoder(iotest.ErrReader(testError)).Decode(&struct{}{})
+	require.ErrorIs(t, err, testError)
 }
 
 func TestUnmarshalNaN(t *testing.T) {
