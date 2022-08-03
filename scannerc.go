@@ -1887,6 +1887,13 @@ func yaml_parser_scan_tag_directive_value(parser *yaml_parser_t, start_mark yaml
 	return true
 }
 
+// is_anchor_char checks if the given character is valid in an anchor name.
+//
+// [yamlx] This function is not appeared in the original libyaml code.
+func is_anchor_char(b []byte, i int) bool {
+	return is_alpha(b, i) || b[i] == ':'
+}
+
 func yaml_parser_scan_anchor(parser *yaml_parser_t, token *yaml_token_t, typ yaml_token_type_t) bool {
 	var s []byte
 
@@ -1899,7 +1906,7 @@ func yaml_parser_scan_anchor(parser *yaml_parser_t, token *yaml_token_t, typ yam
 		return false
 	}
 
-	for is_alpha(parser.buffer, parser.buffer_pos) {
+	for is_anchor_char(parser.buffer, parser.buffer_pos) {
 		s = read(parser, s)
 		if parser.unread < 1 && !yaml_parser_update_buffer(parser, 1) {
 			return false
@@ -1917,7 +1924,7 @@ func yaml_parser_scan_anchor(parser *yaml_parser_t, token *yaml_token_t, typ yam
 
 	if len(s) == 0 ||
 		!(is_blankz(parser.buffer, parser.buffer_pos) || parser.buffer[parser.buffer_pos] == '?' ||
-			parser.buffer[parser.buffer_pos] == ':' || parser.buffer[parser.buffer_pos] == ',' ||
+			parser.buffer[parser.buffer_pos] == ',' ||
 			parser.buffer[parser.buffer_pos] == ']' || parser.buffer[parser.buffer_pos] == '}' ||
 			parser.buffer[parser.buffer_pos] == '%' || parser.buffer[parser.buffer_pos] == '@' ||
 			parser.buffer[parser.buffer_pos] == '`') {
