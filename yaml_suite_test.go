@@ -83,7 +83,7 @@ func readYAMLSuite(t require.TestingT) (r []YAMLSuiteFile) {
 		}
 
 		first := test[0]
-		if strings.Contains(first.Tags, "1.3") {
+		if strings.Contains(first.Tags, "1.3-mod") {
 			// YAML 1.3 is not supported yet.
 			//
 			// Skip it early to make test results more clear.
