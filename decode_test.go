@@ -372,6 +372,14 @@ var unmarshalTests = []struct {
 		"scalar: > # Comment\n\n folded\n line\n \n next\n line\n  * one\n  * two\n\n last\n line\n\n",
 		map[string]string{"scalar": "\nfolded line\nnext line\n * one\n * two\n\nlast line\n"},
 	},
+	{
+		"- >\n \t\n detected\n",
+		[]string{"\t\ndetected\n"},
+	},
+	{
+		"- >\n \t\n \t\t\t\n detected\n",
+		[]string{"\t\n\t\t\t\ndetected\n"},
+	},
 
 	// Map inside interface with no type hints.
 	{
@@ -1210,6 +1218,9 @@ var unmarshalErrorTests = []struct {
 	{`"\ud800\ud800"`, "yaml: offset 9: found invalid Unicode character escape code"},
 	// Invalid Unicode.
 	{`"\U00FFFFFF"`, "yaml: offset 3: found invalid Unicode character escape code"},
+
+	// Invalid indentation (unexpected tab).
+	{"- >\n \t\n\tdetected\n", "yaml: line 3: found a tab character where an indentation space is expected"},
 }
 
 func TestUnmarshalErrors(t *testing.T) {

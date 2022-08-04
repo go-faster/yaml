@@ -83,7 +83,7 @@ func readYAMLSuite(t require.TestingT) (r []YAMLSuiteFile) {
 		}
 
 		first := test[0]
-		if strings.Contains(first.Tags, "1.3") {
+		if strings.Contains(first.Tags, "1.3-mod") {
 			// YAML 1.3 is not supported yet.
 			//
 			// Skip it early to make test results more clear.
@@ -111,7 +111,6 @@ func TestYAMLSuite(t *testing.T) {
 
 	// tag -> reason
 	skipTags := []struct{ tag, reason string }{
-		{"libyaml-err", "Skip libyaml error tests"},
 		{"empty-key", "Skip empty key tests, libyaml does not support empty keys"},
 	}
 	// These tests break libyaml.
@@ -158,7 +157,6 @@ func TestYAMLSuite(t *testing.T) {
 		"A2M4": {},
 		"6BCT": {},
 		"DBG4": {},
-		"R4YG": {},
 		"M7A3": {},
 		"UT92": {},
 		"W4TN": {},
