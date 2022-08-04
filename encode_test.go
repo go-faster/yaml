@@ -645,19 +645,43 @@ var marshalErrorTests = []struct {
 	value interface{}
 	error string
 	panic string
-}{{
-	value: &struct {
-		B       int
-		inlineB ",inline"
-	}{1, inlineB{2, inlineC{3}}},
-	panic: `duplicated key 'b' in struct struct \{ B int; .*`,
-}, {
-	value: &struct {
-		A int
-		B map[string]int ",inline"
-	}{1, map[string]int{"a": 2}},
-	panic: `cannot have key "a" in inlined map: conflicts with struct field`,
-}}
+}{
+	{
+		value: &struct {
+			B       int
+			inlineB ",inline"
+		}{1, inlineB{2, inlineC{3}}},
+		panic: `duplicated key 'b' in struct struct \{ B int; .*`,
+	},
+	{
+		value: &struct {
+			A int
+			B map[string]int ",inline"
+		}{1, map[string]int{"a": 2}},
+		panic: `cannot have key "a" in inlined map: conflicts with struct field`,
+	},
+	{
+		value: &yaml.Node{
+			Kind: yaml.AliasNode,
+		},
+		error: "yaml: alias value must not be empty",
+	},
+	{
+		value: &yaml.Node{
+			Kind:  yaml.AliasNode,
+			Value: "#",
+		},
+		error: "yaml: alias value must contain alphanumerical characters only",
+	},
+	{
+		value: &yaml.Node{
+			Kind:   yaml.ScalarNode,
+			Anchor: "#",
+			Value:  "10",
+		},
+		error: "yaml: anchor value must contain alphanumerical characters only",
+	},
+}
 
 func TestMarshalErrors(t *testing.T) {
 	for i, item := range marshalErrorTests {
