@@ -111,7 +111,6 @@ func TestYAMLSuite(t *testing.T) {
 
 	// tag -> reason
 	skipTags := []struct{ tag, reason string }{
-		{"libyaml-err", "Skip libyaml error tests"},
 		{"empty-key", "Skip empty key tests, libyaml does not support empty keys"},
 	}
 	// These tests break libyaml.
@@ -158,7 +157,6 @@ func TestYAMLSuite(t *testing.T) {
 		"A2M4": {},
 		"6BCT": {},
 		"DBG4": {},
-		"R4YG": {},
 		"M7A3": {},
 		"UT92": {},
 		"W4TN": {},
