@@ -79,6 +79,9 @@ func (e *encoder) emit() {
 
 func (e *encoder) must(ok bool) {
 	if !ok {
+		if err := e.emitter.write_error; err != nil {
+			fail(err)
+		}
 		msg := e.emitter.problem
 		if msg == "" {
 			msg = "unknown problem generating YAML content"
