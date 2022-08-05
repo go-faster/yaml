@@ -1883,8 +1883,14 @@ func yaml_emitter_write_literal_scalar(emitter *yaml_emitter_t, value []byte) bo
 	if !yaml_emitter_write_block_scalar_hints(emitter, value) {
 		return false
 	}
+	no_comment := len(emitter.line_comment) == 0
 	if !yaml_emitter_process_line_comment(emitter) {
 		return false
+	}
+	if no_comment {
+		if !put_break(emitter) {
+			return false
+		}
 	}
 	// emitter.indention = true
 	emitter.whitespace = true
