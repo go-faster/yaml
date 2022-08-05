@@ -183,6 +183,46 @@ var marshalTests = []struct {
 		},
 		"a:\n    - |4-\n         00\n",
 	},
+	{
+		"\t\ndetected\n",
+		"|\n    \t\n    detected\n",
+	},
+	{
+		"\tB\n\tC\n",
+		"|\n    \tB\n    \tC\n",
+	},
+	{
+		"folded line\nnext line\n * one\n * two\n\nlast line\n",
+		"|\n    folded line\n    next line\n     * one\n     * two\n\n    last line\n",
+	},
+	{
+		"\nfolded line\nnext line\n * one\n * two\n\nlast line\n",
+		"|4\n\n    folded line\n    next line\n     * one\n     * two\n\n    last line\n",
+	},
+	{
+		"# detected\n",
+		"|\n    # detected\n",
+	},
+	{
+		"\n# detected\n",
+		"|4\n\n    # detected\n",
+	},
+	{
+		"\n\n# detected\n",
+		"|4\n\n\n    # detected\n",
+	},
+	{
+		"literal\n\n\ttext\n",
+		"|\n    literal\n\n    \ttext\n",
+	},
+	{
+		"\nliteral\n\n\ttext\n",
+		"|4\n\n    literal\n\n    \ttext\n",
+	},
+	{
+		"\n\nliteral\n\n\ttext\n",
+		"|4\n\n\n    literal\n\n    \ttext\n",
+	},
 
 	// Simple values.
 	{
