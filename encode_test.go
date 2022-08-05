@@ -183,6 +183,46 @@ var marshalTests = []struct {
 		},
 		"a:\n    - |4-\n         00\n",
 	},
+	{
+		"\t\ndetected\n",
+		"|\n    \t\n    detected\n",
+	},
+	{
+		"\tB\n\tC\n",
+		"|\n    \tB\n    \tC\n",
+	},
+	{
+		"folded line\nnext line\n * one\n * two\n\nlast line\n",
+		"|\n    folded line\n    next line\n     * one\n     * two\n\n    last line\n",
+	},
+	{
+		"\nfolded line\nnext line\n * one\n * two\n\nlast line\n",
+		"|4\n\n    folded line\n    next line\n     * one\n     * two\n\n    last line\n",
+	},
+	{
+		"# detected\n",
+		"|\n    # detected\n",
+	},
+	{
+		"\n# detected\n",
+		"|4\n\n    # detected\n",
+	},
+	{
+		"\n\n# detected\n",
+		"|4\n\n\n    # detected\n",
+	},
+	{
+		"literal\n\n\ttext\n",
+		"|\n    literal\n\n    \ttext\n",
+	},
+	{
+		"\nliteral\n\n\ttext\n",
+		"|4\n\n    literal\n\n    \ttext\n",
+	},
+	{
+		"\n\nliteral\n\n\ttext\n",
+		"|4\n\n\n    literal\n\n    \ttext\n",
+	},
 
 	// Simple values.
 	{
@@ -885,4 +925,101 @@ func TestSortedOutput(t *testing.T) {
 
 func newTime(t time.Time) *time.Time {
 	return &t
+}
+
+func testEncodeDecodeString(t *testing.T, input string) {
+	t.Run("Scalar", func(t *testing.T) {
+		defer func() {
+			t.Logf("Input: %q", input)
+		}()
+		a := require.New(t)
+
+		data, err := yaml.Marshal(input)
+		a.NoError(err)
+
+		defer func() {
+			t.Logf("Marshal: %q", data)
+		}()
+
+		var output string
+		a.NoError(yaml.Unmarshal(data, &output))
+		a.Equal(input, output)
+	})
+	t.Run("Mapping", func(t *testing.T) {
+		defer func() {
+			t.Logf("Input: %q", input)
+		}()
+		a := require.New(t)
+
+		input := map[string]string{"foo": input}
+		data, err := yaml.Marshal(input)
+		a.NoError(err)
+
+		defer func() {
+			t.Logf("Marshal: %q", data)
+		}()
+
+		var output map[string]string
+		a.NoError(yaml.Unmarshal(data, &output))
+		a.Equal(input, output)
+	})
+	t.Run("Mapping", func(t *testing.T) {
+		defer func() {
+			t.Logf("Input: %q", input)
+		}()
+		a := require.New(t)
+
+		input := map[string]string{"foo": input}
+		data, err := yaml.Marshal(input)
+		a.NoError(err)
+
+		defer func() {
+			t.Logf("Marshal: %q", data)
+		}()
+
+		var output map[string]string
+		a.NoError(yaml.Unmarshal(data, &output))
+		a.Equal(input, output)
+	})
+	t.Run("Sequence", func(t *testing.T) {
+		defer func() {
+			t.Logf("Input: %q", input)
+		}()
+		a := require.New(t)
+
+		input := []string{input}
+		data, err := yaml.Marshal(input)
+		a.NoError(err)
+
+		defer func() {
+			t.Logf("Marshal: %q", data)
+		}()
+
+		var output []string
+		a.NoError(yaml.Unmarshal(data, &output))
+		a.Equal(input, output)
+	})
+}
+
+func TestEncodeDecodeString(t *testing.T) {
+	for i, tt := range []string{
+		"\t\ndetected\n",
+		"\tB\n\tC\n",
+
+		"folded line\nnext line\n * one\n * two\n\nlast line\n",
+		"\nfolded line\nnext line\n * one\n * two\n\nlast line\n",
+
+		"# detected\n",
+		"\n# detected\n",
+		"\n\n# detected\n",
+
+		"literal\n\n\ttext\n",
+		"\nliteral\n\n\ttext\n",
+		"\n\nliteral\n\n\ttext\n",
+	} {
+		tt := tt
+		t.Run(fmt.Sprintf("Test%d", i+1), func(t *testing.T) {
+			testEncodeDecodeString(t, tt)
+		})
+	}
 }
