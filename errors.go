@@ -91,7 +91,7 @@ type UnmarshalError struct {
 	Err  error
 }
 
-func unmarshalErr(n *Node, typ reflect.Type, msgf string, args ...interface{}) error {
+func unmarshalErrf(n *Node, typ reflect.Type, msgf string, args ...interface{}) error {
 	return &UnmarshalError{
 		Node: n,
 		Type: typ,

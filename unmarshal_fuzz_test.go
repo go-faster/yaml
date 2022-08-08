@@ -24,7 +24,13 @@ func FuzzUnmarshal(f *testing.F) {
 	}
 
 	f.Fuzz(func(t *testing.T, input []byte) {
-		var v interface{}
-		_ = yaml.Unmarshal(input, &v)
+		t.Run("Node", func(t *testing.T) {
+			var n yaml.Node
+			_ = yaml.Unmarshal(input, &n)
+		})
+		t.Run("Interface", func(t *testing.T) {
+			var v interface{}
+			_ = yaml.Unmarshal(input, &v)
+		})
 	})
 }

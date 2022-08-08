@@ -196,3 +196,32 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 	fieldMapMutex.Unlock()
 	return sinfo, nil
 }
+
+func isHashable(val reflect.Value) bool {
+	var check func(t reflect.Type) bool
+	check = func(t reflect.Type) bool {
+		switch t.Kind() {
+		case reflect.Map, reflect.Slice, reflect.Func:
+			return false
+		case reflect.Array:
+			return check(t.Elem())
+		case reflect.Struct:
+			for i := 0; i < t.NumField(); i++ {
+				if f := t.Field(i); !check(f.Type) {
+					return false
+				}
+			}
+			return true
+		default:
+			return true
+		}
+	}
+	for val.Kind() == reflect.Interface {
+		val = val.Elem()
+	}
+	if !val.IsValid() {
+		// nil interface.
+		return true
+	}
+	return check(val.Type())
+}
