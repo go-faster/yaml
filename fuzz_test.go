@@ -8,15 +8,7 @@ import (
 	yaml "github.com/go-faster/yamlx"
 )
 
-var _ testingF = (*testing.F)(nil)
-
-type testingF interface {
-	Add(args ...interface{})
-	Errorf(format string, args ...interface{})
-	FailNow()
-}
-
-func addFuzzingCorpus(f testingF) {
+func addFuzzingCorpus(add func(data []byte)) {
 	cases := []string{
 		// runtime error: index out of range
 		"\"\\0\\\r\n",
@@ -45,33 +37,39 @@ func addFuzzingCorpus(f testingF) {
 	}
 
 	for _, data := range cases {
-		f.Add([]byte(data))
+		add([]byte(data))
 	}
 
 	for _, item := range unmarshalTests {
-		f.Add([]byte(item.data))
+		add([]byte(item.data))
 	}
 	for _, item := range unmarshalerTests {
-		f.Add([]byte(item.data))
+		add([]byte(item.data))
 	}
-	f.Add([]byte(mergeTests))
+	add([]byte(mergeTests))
 	for _, item := range unmarshalStrictTests {
-		f.Add([]byte(item.data))
+		add([]byte(item.data))
 	}
 
 	for _, item := range marshalTests {
-		f.Add([]byte(item.data))
+		add([]byte(item.data))
 	}
 	for _, item := range marshalerTests {
-		f.Add([]byte(item.data))
+		add([]byte(item.data))
 	}
 }
 
 func FuzzDecodeEncodeDecode(f *testing.F) {
-	addFuzzingCorpus(f)
+	add := func(data []byte) {
+		var n yaml.Node
+		if err := yaml.Unmarshal(data, &n); err == nil {
+			f.Add(data)
+		}
+	}
+	addFuzzingCorpus(add)
 	for _, tt := range readJSONSuite(f) {
 		if tt.Action == Accept {
-			f.Add(tt.Data)
+			add(tt.Data)
 		}
 	}
 

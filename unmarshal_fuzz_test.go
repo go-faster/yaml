@@ -7,7 +7,9 @@ import (
 )
 
 func FuzzUnmarshal(f *testing.F) {
-	addFuzzingCorpus(f)
+	addFuzzingCorpus(func(data []byte) {
+		f.Add(data)
+	})
 
 	// TODO(tdakkota): move to addFuzzingCorpus, currently DecodeEncodeDecode fuzzing fails
 	//  due to some marshaling issues
