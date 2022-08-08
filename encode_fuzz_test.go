@@ -12,7 +12,9 @@ func FuzzEncodeDecodeString(f *testing.F) {
 		case nil:
 			return
 		case string:
-			f.Add(input)
+			if utf8.ValidString(input) {
+				f.Add(input)
+			}
 		case map[string]interface{}:
 			for _, v := range input {
 				collectStrings(f, v)
