@@ -24,6 +24,9 @@ linters-settings:
       - performance
       - style
     disabled-checks:
+      # https://github.com/go-critic/go-critic/issues/1245
+      - typeUnparen
+
       - hugeParam
       - rangeValCopy
       - exitAfterDefer

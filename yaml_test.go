@@ -20,7 +20,7 @@ func Test_isHashable(t *testing.T) {
 		{val: "foobar", want: true},
 		// Complex types
 		{val: struct{ val [1]string }{}, want: true},
-		{val: (chan int)(nil), want: true},
+		{val: chan int(nil), want: true},
 		// Pointers
 		{val: new(int), want: true},
 		{val: new(int64), want: true},
