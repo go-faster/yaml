@@ -226,7 +226,7 @@ func (p *parser) alias() *Node {
 	n.Alias = p.anchors[n.Value]
 	if n.Alias == nil {
 		// FIXME: is that right error type?
-		fail(unmarshalErr(n, nil, "unknown anchor %q referenced", n.Value))
+		fail(unmarshalErrf(n, nil, "unknown anchor %q referenced", n.Value))
 	}
 	p.expect(yaml_ALIAS_EVENT)
 	return n
@@ -371,7 +371,7 @@ func (d *decoder) terror(n *Node, tag string, out reflect.Value) {
 
 	typ := out.Type()
 	d.terrors = append(d.terrors,
-		unmarshalErr(n, typ, "cannot unmarshal %s%s into %s", shortTag(tag), value, typ),
+		unmarshalErrf(n, typ, "cannot unmarshal %s%s into %s", shortTag(tag), value, typ),
 	)
 }
 
@@ -501,7 +501,7 @@ func (d *decoder) unmarshal(n *Node, out reflect.Value) (good bool) {
 		d.aliasCount++
 	}
 	if d.aliasCount > 100 && d.decodeCount > 1000 && float64(d.aliasCount)/float64(d.decodeCount) > allowedAliasRatio(d.decodeCount) {
-		fail(unmarshalErr(n, out.Type(), "document contains excessive aliasing"))
+		fail(unmarshalErrf(n, out.Type(), "document contains excessive aliasing"))
 	}
 	if out.Type() == nodeType {
 		out.Set(reflect.ValueOf(n).Elem())
@@ -530,7 +530,7 @@ func (d *decoder) unmarshal(n *Node, out reflect.Value) (good bool) {
 		}
 		fallthrough
 	default:
-		fail(unmarshalErr(n, out.Type(), "cannot decode node with unknown kind %d", n.Kind))
+		fail(unmarshalErrf(n, out.Type(), "cannot decode node with unknown kind %d", n.Kind))
 	}
 	return good
 }
@@ -547,7 +547,7 @@ func (d *decoder) document(n *Node, out reflect.Value) (good bool) {
 func (d *decoder) alias(n *Node, out reflect.Value) (good bool) {
 	if _, ok := d.aliases[n]; ok {
 		// TODO this could actually be allowed in some circumstances.
-		fail(unmarshalErr(n, out.Type(), "anchor %q value contains itself", n.Value))
+		fail(unmarshalErrf(n, out.Type(), "anchor %q value contains itself", n.Value))
 	}
 	d.aliases[n] = struct{}{}
 	d.aliasDepth++
@@ -579,7 +579,7 @@ func (d *decoder) scalar(n *Node, out reflect.Value) bool {
 		if tag == binaryTag {
 			data, err := base64.StdEncoding.DecodeString(resolved.(string))
 			if err != nil {
-				fail(unmarshalErr(n, out.Type(), "decode !!binary: %w", err))
+				fail(unmarshalErrf(n, out.Type(), "decode !!binary: %w", err))
 			}
 			resolved = string(data)
 		}
@@ -741,7 +741,7 @@ func (d *decoder) sequence(n *Node, out reflect.Value) (good bool) {
 		out.Set(reflect.MakeSlice(out.Type(), l, l))
 	case reflect.Array:
 		if l != out.Len() {
-			fail(unmarshalErr(n, out.Type(), "invalid array: want %d elements but got %d", out.Len(), l))
+			fail(unmarshalErrf(n, out.Type(), "invalid array: want %d elements but got %d", out.Len(), l))
 		}
 	case reflect.Interface:
 		// No type hints. Will have to use a generic sequence.
@@ -768,6 +768,10 @@ func (d *decoder) sequence(n *Node, out reflect.Value) (good bool) {
 		iface.Set(out)
 	}
 	return true
+}
+
+func failWantHashable(n *Node, val reflect.Value) {
+	fail(unmarshalErrf(n, val.Type(), "invalid map key: %#v", val.Interface()))
 }
 
 func (d *decoder) mapping(n *Node, out reflect.Value) (good bool) {
@@ -836,20 +840,16 @@ func (d *decoder) mapping(n *Node, out reflect.Value) (good bool) {
 		}
 		k := reflect.New(kt).Elem()
 		if d.unmarshal(n.Content[i], k) {
+			if !isHashable(k) {
+				failWantHashable(n.Content[i], k)
+				return
+			}
 			if mergedFields != nil {
 				ki := k.Interface()
 				if _, ok := mergedFields[ki]; ok {
 					continue
 				}
 				mergedFields[ki] = struct{}{}
-			}
-			kkind := k.Kind()
-			if kkind == reflect.Interface {
-				kkind = k.Elem().Kind()
-			}
-			if kkind == reflect.Map || kkind == reflect.Slice {
-				node := n.Content[i]
-				fail(unmarshalErr(node, out.Type(), "invalid map key: %#v", k.Interface()))
 			}
 			e := reflect.New(et).Elem()
 			if d.unmarshal(n.Content[i+1], e) || n.Content[i+1].ShortTag() == nullTag && (mapIsNew || !out.MapIndex(k).IsValid()) {
@@ -963,7 +963,7 @@ func (d *decoder) mappingStruct(n *Node, out reflect.Value) (good bool) {
 }
 
 func failWantMap(merge *Node, typ reflect.Type) {
-	fail(unmarshalErr(merge, typ, "map merge requires map or sequence of maps as the value"))
+	fail(unmarshalErrf(merge, typ, "map merge requires map or sequence of maps as the value"))
 }
 
 func (d *decoder) merge(parent, merge *Node, out reflect.Value) {
@@ -972,7 +972,11 @@ func (d *decoder) merge(parent, merge *Node, out reflect.Value) {
 		d.mergedFields = make(map[interface{}]struct{})
 		for i := 0; i < len(parent.Content); i += 2 {
 			k := reflect.New(ifaceType).Elem()
-			if d.unmarshal(parent.Content[i], k) {
+			if n := parent.Content[i]; d.unmarshal(n, k) {
+				if !isHashable(k) {
+					failWantHashable(n, k)
+					return
+				}
 				d.mergedFields[k.Interface()] = struct{}{}
 			}
 		}
