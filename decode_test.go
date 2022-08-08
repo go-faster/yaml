@@ -1179,6 +1179,38 @@ func TestUnmarshalDurationInt(t *testing.T) {
 	a.Regexp("(?s).* line 1: cannot unmarshal !!int `123` into time.Duration", err.Error())
 }
 
+func TestUnmarshalArray(t *testing.T) {
+	tests := []struct {
+		data  string
+		value interface{}
+		err   string
+	}{
+		{"- 1\n- 2\n- 3", [3]int{1, 2, 3}, ""},
+		{"[]", [0]int{}, ""},
+
+		{"- 1\n- 2\n- 3", [4]int{}, "yaml: line 1: invalid array: want 4 elements but got 3"},
+		{"- 1\n- 2\n- 3", [1]int{}, "yaml: line 1: invalid array: want 1 elements but got 3"},
+		{"- 1\n- 2\n- 3", [0]int{}, "yaml: line 1: invalid array: want 0 elements but got 3"},
+	}
+	for i, tt := range tests {
+		tt := tt
+		t.Run(fmt.Sprintf("Test%d", i+1), func(t *testing.T) {
+			a := require.New(t)
+
+			typ := reflect.ValueOf(tt.value).Type()
+			value := reflect.New(typ)
+			err := yaml.Unmarshal([]byte(tt.data), value.Interface())
+			if tt.err != "" {
+				a.Error(err)
+				a.Regexp(tt.err, err.Error())
+				return
+			}
+			a.NoError(err)
+			a.Equal(tt.value, value.Elem().Interface())
+		})
+	}
+}
+
 var unmarshalErrorTests = []struct {
 	data, error string
 }{
