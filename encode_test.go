@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"math"
 	"net"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -928,63 +929,121 @@ func newTime(t time.Time) *time.Time {
 }
 
 func testEncodeDecodeString(t *testing.T, input string) {
-	t.Run("Scalar", func(t *testing.T) {
-		defer func() {
-			t.Logf("Input: %q", input)
-		}()
-		a := require.New(t)
+	t.Run("String", func(t *testing.T) {
+		tests := []struct {
+			name  string
+			input interface{}
+		}{
+			{
+				"Scalar",
+				input,
+			},
+			{
+				"Mapping",
+				map[string]string{"foo": input},
+			},
+			{
+				"Sequence",
+				[]string{input},
+			},
+		}
+		for _, tt := range tests {
+			tt := tt
+			t.Run(tt.name, func(t *testing.T) {
+				defer func() {
+					t.Logf("Input: %#v", tt.input)
+				}()
+				a := require.New(t)
 
-		data, err := yaml.Marshal(input)
-		a.NoError(err)
+				data, err := yaml.Marshal(tt.input)
+				a.NoError(err)
 
-		defer func() {
-			t.Logf("Marshal: %q", data)
-		}()
+				defer func() {
+					t.Logf("Marshal: %q", data)
+				}()
 
-		var output string
-		a.NoError(yaml.Unmarshal(data, &output))
-		a.Equal(input, output)
+				typ := reflect.TypeOf(tt.input)
+				target := reflect.New(typ)
+				a.NoError(yaml.Unmarshal(data, target.Interface()))
+
+				output := target.Elem().Interface()
+				a.Equal(tt.input, output)
+			})
+		}
 	})
-	t.Run("Mapping", func(t *testing.T) {
-		defer func() {
-			t.Logf("Input: %q", input)
-		}()
-		a := require.New(t)
+	t.Run("Node", func(t *testing.T) {
+		for _, style := range []yaml.Style{
+			0,
+			yaml.DoubleQuotedStyle,
+			yaml.SingleQuotedStyle,
+			yaml.LiteralStyle,
+			yaml.FoldedStyle,
+		} {
+			tt := struct {
+				input yaml.Node
+			}{
+				input: yaml.Node{
+					Kind:  yaml.ScalarNode,
+					Style: style,
+					Value: input,
+				},
+			}
+			t.Run(fmt.Sprintf("%sStyle", style), func(t *testing.T) {
+				defer func() {
+					t.Logf("Input: %#v", tt.input)
+				}()
+				a := require.New(t)
 
-		input := map[string]string{"foo": input}
-		data, err := yaml.Marshal(input)
-		a.NoError(err)
+				data, err := yaml.Marshal(tt.input)
+				a.NoError(err)
 
-		defer func() {
-			t.Logf("Marshal: %q", data)
-		}()
+				defer func() {
+					t.Logf("Marshal: %q", data)
+				}()
 
-		var output map[string]string
-		a.NoError(yaml.Unmarshal(data, &output))
-		a.Equal(input, output)
-	})
-	t.Run("Sequence", func(t *testing.T) {
-		defer func() {
-			t.Logf("Input: %q", input)
-		}()
-		a := require.New(t)
-
-		input := []string{input}
-		data, err := yaml.Marshal(input)
-		a.NoError(err)
-
-		defer func() {
-			t.Logf("Marshal: %q", data)
-		}()
-
-		var output []string
-		a.NoError(yaml.Unmarshal(data, &output))
-		a.Equal(input, output)
+				var output yaml.Node
+				a.NoError(yaml.Unmarshal(data, &output))
+				if output.Kind == yaml.DocumentNode {
+					output = *output.Content[0]
+				}
+				a.Equal(tt.input.Value, output.Value)
+			})
+		}
 	})
 }
 
 func TestEncodeDecodeString(t *testing.T) {
 	for i, tt := range []string{
+		"",
+		" ",
+		"\t",
+		"\n",
+		"\r",
+		"\u0085",
+		"\u2028",
+		"\u2029",
+		"\"",
+		":",
+		"?",
+		"#",
+
+		"foo",
+		"foo\n",
+		"\nfoo",
+		"\n\nfoo",
+		"\n\tfoo",
+		"\tfoo",
+		" foo",
+		"# foo",
+		"\n# foo",
+		"foo\"",
+		"- foo\n - bar\n",
+		"\n- foo\n - bar\n",
+
+		"0\n0",
+		"0\n\n0",
+		"0\n\n\n0",
+
 		"\t\ndetected\n",
 		"\tB\n\tC\n",
 
