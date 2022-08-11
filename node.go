@@ -1,6 +1,7 @@
 package yaml
 
 import (
+	"fmt"
 	"strings"
 	"unicode/utf8"
 )
@@ -27,6 +28,28 @@ const (
 	FoldedStyle
 	FlowStyle
 )
+
+// String implements fmt.Stringer.
+func (s Style) String() string {
+	switch s {
+	case 0:
+		return "Undefined"
+	case TaggedStyle:
+		return "Tagged"
+	case DoubleQuotedStyle:
+		return "DoubleQuoted"
+	case SingleQuotedStyle:
+		return "SingleQuoted"
+	case LiteralStyle:
+		return "Literal"
+	case FoldedStyle:
+		return "Folded"
+	case FlowStyle:
+		return "Flow"
+	default:
+		return fmt.Sprintf("Style(%d)", s)
+	}
+}
 
 // Node represents an element in the YAML document hierarchy. While documents
 // are typically encoded and decoded into higher level types, such as structs
