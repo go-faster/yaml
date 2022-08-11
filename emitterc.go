@@ -1835,7 +1835,7 @@ func yaml_emitter_write_double_quoted_scalar(emitter *yaml_emitter_t, value []by
 }
 
 func yaml_emitter_write_block_scalar_hints(emitter *yaml_emitter_t, value []byte) bool {
-	if is_space(value, 0) || is_break(value, 0) {
+	if len(value) > 0 && (is_space(value, 0) || is_break(value, 0)) {
 		indent_hint := []byte{'0' + byte(emitter.best_indent)}
 		if !yaml_emitter_write_indicator(emitter, indent_hint, false, false, false) {
 			return false
