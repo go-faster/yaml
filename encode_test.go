@@ -963,24 +963,6 @@ func testEncodeDecodeString(t *testing.T, input string) {
 		a.NoError(yaml.Unmarshal(data, &output))
 		a.Equal(input, output)
 	})
-	t.Run("Mapping", func(t *testing.T) {
-		defer func() {
-			t.Logf("Input: %q", input)
-		}()
-		a := require.New(t)
-
-		input := map[string]string{"foo": input}
-		data, err := yaml.Marshal(input)
-		a.NoError(err)
-
-		defer func() {
-			t.Logf("Marshal: %q", data)
-		}()
-
-		var output map[string]string
-		a.NoError(yaml.Unmarshal(data, &output))
-		a.Equal(input, output)
-	})
 	t.Run("Sequence", func(t *testing.T) {
 		defer func() {
 			t.Logf("Input: %q", input)
