@@ -1835,7 +1835,7 @@ func yaml_emitter_write_double_quoted_scalar(emitter *yaml_emitter_t, value []by
 }
 
 func yaml_emitter_write_block_scalar_hints(emitter *yaml_emitter_t, value []byte) bool {
-	if is_space(value, 0) || is_break(value, 0) {
+	if len(value) > 0 && (is_space(value, 0) || is_break(value, 0)) {
 		indent_hint := []byte{'0' + byte(emitter.best_indent)}
 		if !yaml_emitter_write_indicator(emitter, indent_hint, false, false, false) {
 			return false
@@ -1926,10 +1926,15 @@ func yaml_emitter_write_folded_scalar(emitter *yaml_emitter_t, value []byte) boo
 	if !yaml_emitter_write_block_scalar_hints(emitter, value) {
 		return false
 	}
+	no_comment := len(emitter.line_comment) == 0
 	if !yaml_emitter_process_line_comment(emitter) {
 		return false
 	}
-
+	if no_comment {
+		if !put_break(emitter) {
+			return false
+		}
+	}
 	// emitter.indention = true
 	emitter.whitespace = true
 
@@ -1937,18 +1942,12 @@ func yaml_emitter_write_folded_scalar(emitter *yaml_emitter_t, value []byte) boo
 	leading_spaces := true
 	for i := 0; i < len(value); {
 		if is_break(value, i) {
-			if !breaks && !leading_spaces && value[i] == '\n' {
-				k := 0
-				for is_break(value, k) {
+			if !breaks && !leading_spaces {
+				k := i
+				for k < len(value) && is_break(value, k) {
 					k += width(value[k])
 				}
-				// FIXME(tdakkota): hacky, probably there is a better way to do this
-				//
-				// Do not break the line if the next line is additionally indented.
-				//
-				// It leads to double line breaking.
-				next_line_more_indent := bytes.HasPrefix(value[i+1:], []byte{' '})
-				if !is_blankz(value, k) && !next_line_more_indent {
+				if k < len(value) && !is_blank(value, k) {
 					if !put_break(emitter) {
 						return false
 					}
