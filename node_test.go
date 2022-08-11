@@ -2884,3 +2884,22 @@ func fprintCommentSet(out io.Writer, node *yaml.Node) {
 		fmt.Fprintf(out, "%q / %q / %q", node.HeadComment, node.LineComment, node.FootComment)
 	}
 }
+
+func TestStyle_String(t *testing.T) {
+	a := require.New(t)
+	for _, tc := range []struct {
+		style  yaml.Style
+		expect string
+	}{
+		{0, "Undefined"},
+		{yaml.TaggedStyle, "Tagged"},
+		{yaml.DoubleQuotedStyle, "DoubleQuoted"},
+		{yaml.SingleQuotedStyle, "SingleQuoted"},
+		{yaml.LiteralStyle, "Literal"},
+		{yaml.FoldedStyle, "Folded"},
+		{yaml.FlowStyle, "Flow"},
+		{4421412, "Style(4421412)"},
+	} {
+		a.Equal(tc.expect, tc.style.String())
+	}
+}
