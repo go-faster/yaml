@@ -34,6 +34,7 @@ func FuzzEncodeDecodeString(f *testing.F) {
 		}
 	}
 
+	collectStrings(f, encodeDecodeStringTests)
 	for _, tt := range marshalTests {
 		collectStrings(f, tt.value)
 	}
