@@ -951,7 +951,9 @@ func testEncodeDecodeString(t *testing.T, input string) {
 			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				defer func() {
-					t.Logf("Input: %#v", tt.input)
+					if r := recover(); t.Failed() || r != nil {
+						t.Logf("Input: %#v", tt.input)
+					}
 				}()
 				a := require.New(t)
 
@@ -959,7 +961,9 @@ func testEncodeDecodeString(t *testing.T, input string) {
 				a.NoError(err)
 
 				defer func() {
-					t.Logf("Marshal: %q", data)
+					if r := recover(); t.Failed() || r != nil {
+						t.Logf("Marshal: %q", data)
+					}
 				}()
 
 				typ := reflect.TypeOf(tt.input)
@@ -990,7 +994,9 @@ func testEncodeDecodeString(t *testing.T, input string) {
 			}
 			t.Run(fmt.Sprintf("%sStyle", style), func(t *testing.T) {
 				defer func() {
-					t.Logf("Input: %#v", tt.input)
+					if r := recover(); t.Failed() || r != nil {
+						t.Logf("Input: %#v", tt.input)
+					}
 				}()
 				a := require.New(t)
 
@@ -998,7 +1004,9 @@ func testEncodeDecodeString(t *testing.T, input string) {
 				a.NoError(err)
 
 				defer func() {
-					t.Logf("Marshal: %q", data)
+					if r := recover(); t.Failed() || r != nil {
+						t.Logf("Marshal: %q", data)
+					}
 				}()
 
 				var output yaml.Node
@@ -1015,35 +1023,76 @@ func testEncodeDecodeString(t *testing.T, input string) {
 func TestEncodeDecodeString(t *testing.T) {
 	for i, tt := range []string{
 		"",
-		" ",
+
+		// Control characters.
+		"\x00",
+		"\x01",
+		"\a",
+		"\b",
 		"\t",
 		"\n",
+		"\v",
+		"\f",
 		"\r",
+		"\x1a",
+		" ",
+		"\u001b",
+		"\u00a0",
 		"\u0085",
 		"\u2028",
 		"\u2029",
-		"\"",
-		":",
-		"?",
-		"#",
 
+		// Special characters.
+		"\"", "'", "`",
+		"#", "# #", "\n# #",
+		":", ";", ",", ".", "...",
+		">", ">>", ">>>",
+		"?", "!", "!!", "!!str",
+		"[", "]", "[]", "[0]",
+		"{", "}", "{}", "{0:0}",
+		"(", ")",
+		"\\", "\\\\",
+		"|",
+		"&", "&&", "&foo", "&amp;",
+		"*", "**", "*foo",
+		"%", "%%", "%20", "%aa",
+		"@", "$", "~", "+", "-", "_",
+
+		// Numbers.
+		"0",
+		"0.1",
+		"0e1",
+		"0..1",
+		"100",
+		"01",
+		"0o1",
+		"0xff",
+
+		// Some plain cases.
 		"foo",
 		"foo\n",
 		"\nfoo",
-		"\n\nfoo",
-		"\n\tfoo",
 		"\tfoo",
 		" foo",
+		"\n\nfoo",
+		"\n\tfoo",
 		"# foo",
 		"\n# foo",
 		"foo\"",
 		"- foo\n - bar\n",
-		"\n- foo\n - bar\n",
 
-		"0\n0",
-		"0\n\n0",
-		"0\n\n\n0",
+		// Unicode cases.
+		"\u00FF", // Max Latin-1.
+		"щ",
+		"сша",
+		"你",
+		// Emoji.
+		"\U0001f439",
+		"\U0001f1fa\U0001f1f8",
+		"\U0001f474\U0001f3ff",
+		"\U0001f3f3\ufe0f\u200d\U0001f308",
 
+		// Test cases from original yaml.v3 and YAML suite.
 		"\t\ndetected\n",
 		"\tB\n\tC\n",
 
@@ -1057,6 +1106,11 @@ func TestEncodeDecodeString(t *testing.T) {
 		"literal\n\n\ttext\n",
 		"\nliteral\n\n\ttext\n",
 		"\n\nliteral\n\n\ttext\n",
+
+		// Found by fuzzer.
+		"0\n0",
+		"0\n\n0",
+		"0\n\n\n0",
 	} {
 		tt := tt
 		t.Run(fmt.Sprintf("Test%d", i+1), func(t *testing.T) {
