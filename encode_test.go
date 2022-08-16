@@ -483,6 +483,8 @@ var marshalTests = []struct {
 	},
 
 	// Encode unicode as utf-8 rather than in escaped form.
+	//
+	// See https://github.com/go-yaml/yaml/issues/737.
 	{
 		map[string]string{"a": "你好"},
 		"a: 你好\n",
@@ -491,6 +493,19 @@ var marshalTests = []struct {
 		"你好",
 		"你好\n",
 	},
+	{
+		map[string]string{"a": "🛑"},
+		"a: 🛑\n",
+	},
+	// Notice that result is not escaped.
+	{
+		map[string]string{"a": "\U0001f3f3\ufe0f\u200d\U0001f308"},
+		"a: " + "\U0001f3f3\ufe0f\u200d\U0001f308" + "\n",
+	},
+	{"\U0001f3f3\ufe0f\u200d\U0001f308", "\U0001f3f3\ufe0f\u200d\U0001f308\n"},
+	{"\U0001f439", "\U0001f439\n"},
+	{"\U0001f1fa\U0001f1f8", "\U0001f1fa\U0001f1f8\n"},
+	{"\U0001f474\U0001f3ff", "\U0001f474\U0001f3ff\n"},
 
 	// Support encoding.TextMarshaler.
 	{
