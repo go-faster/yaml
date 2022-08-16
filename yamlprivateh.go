@@ -22,6 +22,11 @@
 
 package yaml
 
+import (
+	"unicode"
+	"unicode/utf8"
+)
+
 const (
 	// The size of the input raw buffer.
 	input_raw_buffer_size = 512
@@ -83,15 +88,17 @@ func is_ascii(b []byte, i int) bool {
 
 // Check if the character at the start of the buffer can be printed unescaped.
 func is_printable(b []byte, i int) bool {
+	r, _ := utf8.DecodeRune(b[i:])
+	if r == utf8.RuneError {
+		return false
+	}
+
 	return ((b[i] == 0x0A) || // . == #x0A
 		(b[i] >= 0x20 && b[i] <= 0x7E) || // #x20 <= . <= #x7E
 		(b[i] == 0xC2 && b[i+1] >= 0xA0) || // #0xA0 <= . <= #xD7FF
 		(b[i] > 0xC2 && b[i] < 0xED) ||
 		(b[i] == 0xED && b[i+1] < 0xA0) ||
-		(b[i] == 0xEE) ||
-		(b[i] == 0xEF && // #xE000 <= . <= #xFFFD
-			!(b[i+1] == 0xBB && b[i+2] == 0xBF) && // && . != #xFEFF
-			!(b[i+1] == 0xBF && (b[i+2] == 0xBE || b[i+2] == 0xBF))))
+		unicode.IsGraphic(r))
 }
 
 // Check if the character at the specified position is NUL.
