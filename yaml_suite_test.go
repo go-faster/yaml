@@ -132,9 +132,6 @@ func TestYAMLSuite(t *testing.T) {
 		"RHX7": {},
 
 		// These valid tests are known to fail.
-		"W5VH": {},
-		"8XYN": {},
-		"2SXE": {},
 		"7Z25": {},
 		"K3WX": {},
 		"5MUD": {},
