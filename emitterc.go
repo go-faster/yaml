@@ -1212,7 +1212,7 @@ func yaml_emitter_analyze_anchor(emitter *yaml_emitter_t, anchor []byte, alias b
 		return yaml_emitter_set_emitter_error(emitter, problem)
 	}
 	for i := 0; i < len(anchor); i += width(anchor[i]) {
-		if !is_alpha(anchor, i) {
+		if !is_anchor_char(anchor, i) {
 			problem := "anchor value must contain alphanumerical characters only"
 			if alias {
 				problem = "alias value must contain alphanumerical characters only"

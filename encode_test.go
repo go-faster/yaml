@@ -507,6 +507,16 @@ var marshalTests = []struct {
 	{"\U0001f1fa\U0001f1f8", "\U0001f1fa\U0001f1f8\n"},
 	{"\U0001f474\U0001f3ff", "\U0001f474\U0001f3ff\n"},
 
+	// Anchor names.
+	{
+		yaml.Node{
+			Kind:   yaml.ScalarNode,
+			Anchor: "the_\U0001f3f3\ufe0f\u200d\U0001f308_anchor",
+			Value:  "10",
+		},
+		"&the_\U0001f3f3\ufe0f\u200d\U0001f308_anchor 10\n",
+	},
+
 	// Support encoding.TextMarshaler.
 	{
 		map[string]net.IP{"a": net.IPv4(1, 2, 3, 4)},
@@ -725,14 +735,14 @@ var marshalErrorTests = []struct {
 	{
 		value: &yaml.Node{
 			Kind:  yaml.AliasNode,
-			Value: "#",
+			Value: ",",
 		},
 		error: "yaml: alias value must contain alphanumerical characters only",
 	},
 	{
 		value: &yaml.Node{
 			Kind:   yaml.ScalarNode,
-			Anchor: "#",
+			Anchor: ",",
 			Value:  "10",
 		},
 		error: "yaml: anchor value must contain alphanumerical characters only",
