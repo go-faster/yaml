@@ -690,6 +690,11 @@ var unmarshalTests = []struct {
 		"a: &a [1, 2]\nb: *a",
 		&struct{ B []int }{[]int{1, 2}},
 	},
+	// Unicode anchor.
+	{
+		"a: &🤡 [1, 2]\nb: *🤡",
+		&struct{ B []int }{[]int{1, 2}},
+	},
 
 	// Bug #1133337
 	{
