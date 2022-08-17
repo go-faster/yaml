@@ -25,6 +25,7 @@ package yaml
 import (
 	"bytes"
 	"fmt"
+	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
 )
@@ -1891,11 +1892,34 @@ func yaml_parser_scan_tag_directive_value(parser *yaml_parser_t, start_mark yaml
 	return true
 }
 
+// is_flow_indicator check if the given character is a flow indicator.
+//
+// # See https://yaml.org/spec/1.2.2/#rule-c-flow-indicator.
+//
+// [yamlx] This function is not appeared in the original libyaml code.
+func is_flow_indicator(b []byte, i int) bool {
+	switch b[i] {
+	case ',', '[', ']', '{', '}':
+		return true
+	default:
+		return false
+	}
+}
+
 // is_anchor_char checks if the given character is valid in an anchor name.
 //
 // [yamlx] This function is not appeared in the original libyaml code.
 func is_anchor_char(b []byte, i int) bool {
-	return is_alpha(b, i) || b[i] == ':'
+	if is_blank(b, i) || is_flow_indicator(b, i) {
+		return false
+	}
+
+	r, _ := utf8.DecodeRune(b[i:])
+	if unicode.IsControl(r) || unicode.IsSpace(r) {
+		return false
+	}
+
+	return true
 }
 
 func yaml_parser_scan_anchor(parser *yaml_parser_t, token *yaml_token_t, typ yaml_token_type_t) bool {

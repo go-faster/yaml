@@ -690,6 +690,11 @@ var unmarshalTests = []struct {
 		"a: &a [1, 2]\nb: *a",
 		&struct{ B []int }{[]int{1, 2}},
 	},
+	// Unicode anchor.
+	{
+		"a: &🤡 [1, 2]\nb: *🤡",
+		&struct{ B []int }{[]int{1, 2}},
+	},
 
 	// Bug #1133337
 	{
@@ -1220,11 +1225,11 @@ var unmarshalErrorTests = []struct {
 	{"a:\n- b: *,", "yaml: line 2:5: did not find expected alphabetic or numeric character"},
 	{"a: *b\n", "yaml: line 1: unknown anchor \"b\" referenced"},
 	{"a: &a\n  b: *a\n", "yaml: line 2: anchor \"a\" value contains itself"},
+	{"b: *a\na: &a {c: 1}", `yaml: line 1: unknown anchor "a" referenced`},
 	{"value: -", "yaml: offset 7: block sequence entries are not allowed in this context"},
 	{"a: !!binary ==", "yaml: line 1: decode !!binary: illegal base64 data at input byte 0"},
 	{"{[.]}", `yaml: line 1: invalid map key: \[\]interface \{\}\{"\."\}`},
 	{"{{.}}", `yaml: line 1: invalid map key: map\[string]interface \{\}\{".":interface \{\}\(nil\)\}`},
-	{"b: *a\na: &a {c: 1}", `yaml: line 1: unknown anchor "a" referenced`},
 	{"%TAG !%79! tag:yaml.org,2002:\n---\nv: !%79!int '1'", "yaml: offset 6: did not find expected whitespace"},
 	{"a:\n  1:\nb\n  2:", ".*could not find expected ':'"},
 	{"a: 1\nb: 2\nc 2\nd: 3\n", "^yaml: line 3: could not find expected ':'$"},
@@ -1259,6 +1264,14 @@ var unmarshalErrorTests = []struct {
 	{"0:\n00:\n 000\n<<:\n  []:", `yaml: line 5: invalid map key: \[\]interface \{\}\{\}`},
 	{"{}:", `yaml: line 1: invalid map key: map\[string\]interface \{\}\{\}`},
 	{"[]:", `yaml: line 1: invalid map key: \[\]interface \{\}\{\}`},
+
+	// Invalid anchor/alias name.
+	{"a: &", "yaml: offset 4: did not find expected alphabetic or numeric character"},
+	{"a: *", "yaml: offset 4: did not find expected alphabetic or numeric character"},
+	{"a: & foo\n", "yaml: offset 4: did not find expected alphabetic or numeric character"},
+	{"a: &, foo\n", "yaml: offset 4: did not find expected alphabetic or numeric character"},
+	{"a: foo\nb: *\n", "yaml: line 2:3: did not find expected alphabetic or numeric character"},
+	{"a: foo\nb: *,\n", "yaml: line 2:3: did not find expected alphabetic or numeric character"},
 }
 
 func TestUnmarshalErrors(t *testing.T) {
