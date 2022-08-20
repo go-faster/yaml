@@ -1,6 +1,8 @@
 package yaml_test
 
 import (
+	"os"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -72,6 +74,7 @@ func FuzzDecodeEncodeDecode(f *testing.F) {
 			add(tt.Data)
 		}
 	}
+	compareTags, _ := strconv.ParseBool(os.Getenv("YAMLX_FUZZ_COMPARE_TAGS"))
 
 	f.Fuzz(func(t *testing.T, input []byte) {
 		var (
@@ -108,7 +111,10 @@ func FuzzDecodeEncodeDecode(f *testing.F) {
 
 		var compareNodes func(n1, n2 *yaml.Node)
 		compareNodes = func(n1, n2 *yaml.Node) {
-			a.Equal(n1.ShortTag(), n2.ShortTag())
+			a.Equal(n1.Kind, n2.Kind)
+			if compareTags {
+				a.Equal(n1.ShortTag(), n2.ShortTag())
+			}
 			a.Equal(n1.Value, n2.Value)
 			a.Equal(len(n1.Content), len(n2.Content))
 			for i := range n1.Content {
