@@ -116,6 +116,18 @@ func FuzzDecodeEncodeDecode(f *testing.F) {
 				a.Equal(n1.ShortTag(), n2.ShortTag())
 			}
 			a.Equal(n1.Value, n2.Value)
+
+			// Compare aliases and anchors.
+			a.Equal(n1.Anchor, n2.Anchor)
+			if n1.Alias == nil {
+				// Ensure that n2.Alias is nil as well.
+				a.Nil(n2.Alias)
+			} else {
+				a.NotNil(n2.Alias)
+				compareNodes(n1.Alias, n2.Alias)
+			}
+
+			// Compare children.
 			a.Equal(len(n1.Content), len(n2.Content))
 			for i := range n1.Content {
 				compareNodes(n1.Content[i], n2.Content[i])
