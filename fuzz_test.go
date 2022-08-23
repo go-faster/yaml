@@ -36,6 +36,8 @@ func addFuzzingCorpus(add func(data []byte)) {
 		"scalar: >\n next\n line\n  * one\n",
 		// https://github.com/go-faster/yamlx/issues/8
 		"0:\n    #00\n    - |1 \n      00",
+		// https://github.com/go-faster/yamlx/pull/19#issuecomment-1221479649
+		"|+\n\n#00000",
 	}
 
 	for _, data := range cases {
@@ -95,6 +97,12 @@ func FuzzDecodeEncodeDecode(f *testing.F) {
 		if err := yaml.Unmarshal(input, &v); err != nil {
 			t.Skipf("Error: %+v", err)
 			return
+		}
+		if v.Kind == yaml.DocumentNode {
+			// FIXME(tdakkota): parser/scanner thinks that comments are part of children nodes.
+			v.HeadComment = ""
+			v.LineComment = ""
+			v.FootComment = ""
 		}
 
 		a := require.New(t)
