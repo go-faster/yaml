@@ -1061,11 +1061,23 @@ func yaml_emitter_process_tag(emitter *yaml_emitter_t) bool {
 		return true
 	}
 	if len(emitter.tag_data.handle) > 0 {
+		need_brackets := len(emitter.tag_data.handle) <= 2 && len(emitter.tag_data.suffix) == 0
+		if need_brackets {
+			if !yaml_emitter_write_indicator(emitter, []byte("!<"), true, false, false) {
+				return false
+			}
+			emitter.whitespace = true
+		}
 		if !yaml_emitter_write_tag_handle(emitter, emitter.tag_data.handle) {
 			return false
 		}
 		if len(emitter.tag_data.suffix) > 0 {
 			if !yaml_emitter_write_tag_content(emitter, emitter.tag_data.suffix, false) {
+				return false
+			}
+		}
+		if need_brackets {
+			if !yaml_emitter_write_indicator(emitter, []byte{'>'}, false, false, false) {
 				return false
 			}
 		}

@@ -610,6 +610,15 @@ var marshalTests = []struct {
 		"'foo'\n",
 	},
 
+	// Special tag cases.
+	{
+		yaml.Node{
+			Kind: yaml.ScalarNode,
+			Tag:  "!!",
+		},
+		"!<!!>\n",
+	},
+
 	// Enforced tagging with shorthand notation (issue #616).
 	{
 		&struct {
