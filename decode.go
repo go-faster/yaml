@@ -340,6 +340,7 @@ type decoder struct {
 
 var (
 	nodeType       = reflect.TypeOf(Node{})
+	ptrNodeType    = reflect.TypeOf(&Node{})
 	durationType   = reflect.TypeOf(time.Duration(0))
 	stringMapType  = reflect.TypeOf(map[string]interface{}{})
 	generalMapType = reflect.TypeOf(map[interface{}]interface{}{})
@@ -503,8 +504,12 @@ func (d *decoder) unmarshal(n *Node, out reflect.Value) (good bool) {
 	if d.aliasCount > 100 && d.decodeCount > 1000 && float64(d.aliasCount)/float64(d.decodeCount) > allowedAliasRatio(d.decodeCount) {
 		fail(unmarshalErrf(n, out.Type(), "document contains excessive aliasing"))
 	}
-	if out.Type() == nodeType {
+	switch out.Type() {
+	case nodeType:
 		out.Set(reflect.ValueOf(n).Elem())
+		return true
+	case ptrNodeType:
+		out.Set(reflect.ValueOf(n))
 		return true
 	}
 	switch n.Kind {
