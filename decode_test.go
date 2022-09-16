@@ -1216,6 +1216,37 @@ func TestUnmarshalArray(t *testing.T) {
 	}
 }
 
+func TestUnmarshalInlinedNodeMap(t *testing.T) {
+	t.Run("Value", func(t *testing.T) {
+		a := require.New(t)
+
+		var val struct {
+			A      int
+			Inline map[string]yaml.Node `yaml:",inline"`
+		}
+		a.NoError(yaml.Unmarshal([]byte("a: 1\nb: 2\nc: 3"), &val))
+
+		a.Equal(1, val.A)
+		inline := val.Inline
+		a.Equal("2", inline["b"].Value)
+		a.Equal("3", inline["c"].Value)
+	})
+	t.Run("Pointer", func(t *testing.T) {
+		a := require.New(t)
+
+		var val struct {
+			A      int
+			Inline map[string]*yaml.Node `yaml:",inline"`
+		}
+		a.NoError(yaml.Unmarshal([]byte("a: 1\nb: 2\nc: 3"), &val))
+
+		a.Equal(1, val.A)
+		inline := val.Inline
+		a.Equal("2", inline["b"].Value)
+		a.Equal("3", inline["c"].Value)
+	})
+}
+
 var unmarshalErrorTests = []struct {
 	data, error string
 }{
