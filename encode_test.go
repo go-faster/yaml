@@ -25,8 +25,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-faster/errors"
 	"github.com/stretchr/testify/require"
+
+	"github.com/go-faster/errors"
 
 	yaml "github.com/go-faster/yamlx"
 )

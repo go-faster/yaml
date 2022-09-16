@@ -24,8 +24,9 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/go-faster/errors"
 	"go.uber.org/multierr"
+
+	"github.com/go-faster/errors"
 )
 
 // ----------------------------------------------------------------------------
