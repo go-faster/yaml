@@ -21,11 +21,12 @@
 package yaml
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 	"sync"
+
+	"github.com/go-faster/errors"
 )
 
 // --------------------------------------------------------------------------

@@ -16,7 +16,6 @@
 package yaml_test
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"net"
@@ -26,6 +25,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-faster/errors"
 	"github.com/stretchr/testify/require"
 
 	yaml "github.com/go-faster/yamlx"

@@ -18,13 +18,13 @@ package yaml
 import (
 	"encoding"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"io"
 	"math"
 	"reflect"
 	"time"
 
+	"github.com/go-faster/errors"
 	"go.uber.org/multierr"
 )
 
