@@ -1193,6 +1193,10 @@ func TestUnmarshalArray(t *testing.T) {
 	}{
 		{"- 1\n- 2\n- 3", [3]int{1, 2, 3}, ""},
 		{"[]", [0]int{}, ""},
+		{"b: 0", struct {
+			A [3]int `yaml:"a"`
+			B int
+		}{}, ""},
 
 		{"- 1\n- 2\n- 3", [4]int{}, "yaml: line 1: invalid array: want 4 elements but got 3"},
 		{"- 1\n- 2\n- 3", [1]int{}, "yaml: line 1: invalid array: want 1 elements but got 3"},

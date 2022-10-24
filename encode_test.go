@@ -274,6 +274,17 @@ var marshalTests = []struct {
 		"a:\n    - 1\n    - 2\n",
 	},
 	{
+		&struct{ A [2]int }{},
+		"a:\n    - 0\n    - 0\n",
+	},
+	{
+		&struct {
+			A [2]int `yaml:"a,omitempty"`
+			B int    `yaml:"b"`
+		}{},
+		"b: 0\n",
+	},
+	{
 		&struct {
 			B int "a"
 		}{1},
