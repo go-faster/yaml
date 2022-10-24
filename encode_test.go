@@ -912,6 +912,8 @@ func TestMarshalerWholeDocument(t *testing.T) {
 	a.Equal("hello: world!\n", string(data))
 }
 
+var _ yaml.Marshaler = (*failingMarshaler)(nil)
+
 type failingMarshaler struct{}
 
 func (ft *failingMarshaler) MarshalYAML() (any, error) {
@@ -920,6 +922,19 @@ func (ft *failingMarshaler) MarshalYAML() (any, error) {
 
 func TestMarshalerError(t *testing.T) {
 	_, err := yaml.Marshal(&failingMarshaler{})
+	require.ErrorIs(t, err, errFailing)
+}
+
+var _ encoding.TextMarshaler = (*failingTextMarshaler)(nil)
+
+type failingTextMarshaler struct{}
+
+func (ft *failingTextMarshaler) MarshalText() ([]byte, error) {
+	return nil, errFailing
+}
+
+func TestTextMarshalerError(t *testing.T) {
+	_, err := yaml.Marshal(&failingTextMarshaler{})
 	require.ErrorIs(t, err, errFailing)
 }
 
