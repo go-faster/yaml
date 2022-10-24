@@ -66,7 +66,7 @@ func readJSONSuite(t require.TestingT) (r []JSONSuiteTest) {
 
 func TestJSONSuite(t *testing.T) {
 	// Time to break the big lie about YAML and JSON compatibility.
-	skipControlCharactes := map[string]struct{}{
+	skipControlCharacters := map[string]struct{}{
 		"y_string_nonCharacterInUTF-8_U+FFFF": {},
 		"y_string_unescaped_char_delete":      {},
 		"y_string_with_del_character":         {},
@@ -75,7 +75,7 @@ func TestJSONSuite(t *testing.T) {
 	for _, tt := range readJSONSuite(t) {
 		tt := tt
 		t.Run(tt.Name, func(t *testing.T) {
-			if _, ok := skipControlCharactes[tt.Name]; ok {
+			if _, ok := skipControlCharacters[tt.Name]; ok {
 				t.Skip("YAML does not allow control characters in strings")
 				return
 			}

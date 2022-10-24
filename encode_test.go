@@ -717,6 +717,8 @@ func (errWriter) Write([]byte) (int, error) {
 	return 0, errTestWriteError
 }
 
+const invalidUTF8String = "\xff"
+
 var marshalErrorTests = []struct {
 	value interface{}
 	error string
@@ -736,6 +738,26 @@ var marshalErrorTests = []struct {
 		}{1, map[string]int{"a": 2}},
 		panic: `cannot have key "a" in inlined map: conflicts with struct field`,
 	},
+
+	// Tagged string marshaling.
+	{
+		value: &yaml.Node{
+			Kind:  yaml.ScalarNode,
+			Tag:   "!!str",
+			Value: invalidUTF8String,
+		},
+		error: "yaml: cannot marshal invalid UTF-8 data as !!str",
+	},
+	{
+		value: &yaml.Node{
+			Kind:  yaml.ScalarNode,
+			Tag:   "!!binary",
+			Value: invalidUTF8String,
+		},
+		error: "yaml: explicitly tagged !!binary data must be base64-encoded",
+	},
+
+	// Alias and anchor marshaling.
 	{
 		value: &yaml.Node{
 			Kind: yaml.AliasNode,
