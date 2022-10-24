@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/go-faster/errors v0.6.1
 	github.com/go-faster/jx v0.40.0
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.1
 	go.uber.org/multierr v1.8.0
 )
 
