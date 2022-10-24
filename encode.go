@@ -109,15 +109,15 @@ func (e *encoder) marshalDoc(tag string, in reflect.Value) {
 
 func (e *encoder) marshal(tag string, in reflect.Value) {
 	tag = shortTag(tag)
+	if in.Kind() == reflect.Interface {
+		in = in.Elem()
+	}
 	if !in.IsValid() || in.Kind() == reflect.Ptr && in.IsNil() {
 		e.nilv()
 		return
 	}
 	iface := in.Interface()
 	switch value := iface.(type) {
-	case *Node:
-		e.nodev(in)
-		return
 	case Node:
 		if !in.CanAddr() {
 			n := reflect.New(in.Type()).Elem()
@@ -125,6 +125,9 @@ func (e *encoder) marshal(tag string, in reflect.Value) {
 			in = n
 		}
 		e.nodev(in.Addr())
+		return
+	case *Node:
+		e.nodev(in)
 		return
 	case time.Time:
 		e.timev(tag, in)
@@ -152,13 +155,8 @@ func (e *encoder) marshal(tag string, in reflect.Value) {
 			fail(err)
 		}
 		in = reflect.ValueOf(string(text))
-	case nil:
-		e.nilv()
-		return
 	}
 	switch in.Kind() {
-	case reflect.Interface:
-		e.marshal(tag, in.Elem())
 	case reflect.Map:
 		e.mapv(tag, in)
 	case reflect.Ptr:
