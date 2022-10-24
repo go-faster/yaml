@@ -6,8 +6,8 @@ import (
 )
 
 func FuzzEncodeDecodeString(f *testing.F) {
-	var collectStrings func(f *testing.F, input interface{})
-	collectStrings = func(f *testing.F, input interface{}) {
+	var collectStrings func(f *testing.F, input any)
+	collectStrings = func(f *testing.F, input any) {
 		switch input := input.(type) {
 		case nil:
 			return
@@ -15,7 +15,7 @@ func FuzzEncodeDecodeString(f *testing.F) {
 			if utf8.ValidString(input) {
 				f.Add(input)
 			}
-		case map[string]interface{}:
+		case map[string]any:
 			for _, v := range input {
 				collectStrings(f, v)
 			}
@@ -23,7 +23,7 @@ func FuzzEncodeDecodeString(f *testing.F) {
 			for _, v := range input {
 				collectStrings(f, v)
 			}
-		case []interface{}:
+		case []any:
 			for _, v := range input {
 				collectStrings(f, v)
 			}

@@ -10,7 +10,7 @@ import (
 
 func Test_isHashable(t *testing.T) {
 	tests := []struct {
-		val  interface{}
+		val  any
 		want bool
 	}{
 		// Primitives
@@ -65,7 +65,7 @@ func Test_isHashable(t *testing.T) {
 				check = a.NotPanics
 			}
 			check(func() {
-				_ = map[interface{}]struct{}{
+				_ = map[any]struct{}{
 					tt.val: {},
 				}
 			})

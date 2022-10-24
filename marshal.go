@@ -12,7 +12,7 @@ import (
 // If an error is returned by MarshalYAML, the marshaling procedure stops
 // and returns with the provided error.
 type Marshaler interface {
-	MarshalYAML() (interface{}, error)
+	MarshalYAML() (any, error)
 }
 
 // Marshal serializes the value provided into a YAML document. The structure
@@ -57,7 +57,7 @@ type Marshaler interface {
 //	}
 //	yaml.Marshal(&T{B: 2}) // Returns "b: 2\n"
 //	yaml.Marshal(&T{F: 1}} // Returns "a: 1\nb: 0\n"
-func Marshal(in interface{}) (out []byte, err error) {
+func Marshal(in any) (out []byte, err error) {
 	defer handleErr(&err)
 	e := newEncoder()
 	defer e.destroy()
@@ -88,7 +88,7 @@ func NewEncoder(w io.Writer) *Encoder {
 //
 // See the documentation for Marshal for details about the conversion of Go
 // values to YAML.
-func (e *Encoder) Encode(v interface{}) (err error) {
+func (e *Encoder) Encode(v any) (err error) {
 	defer handleErr(&err)
 	e.encoder.marshalDoc("", reflect.ValueOf(v))
 	return nil
@@ -98,7 +98,7 @@ func (e *Encoder) Encode(v interface{}) (err error) {
 //
 // See the documentation for Marshal for details about the
 // conversion of Go values into YAML.
-func (n *Node) Encode(v interface{}) (err error) {
+func (n *Node) Encode(v any) (err error) {
 	defer handleErr(&err)
 	e := newEncoder()
 	defer e.destroy()

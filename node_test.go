@@ -2729,7 +2729,7 @@ func TestSetString(t *testing.T) {
 }
 
 var nodeEncodeDecodeTests = []struct {
-	value interface{}
+	value any
 	yaml  string
 	node  yaml.Node
 }{{
@@ -2758,7 +2758,7 @@ var nodeEncodeDecodeTests = []struct {
 		Tag:   "!!int",
 	},
 }, {
-	[]interface{}{1, 2},
+	[]any{1, 2},
 	"[1, 2]",
 	yaml.Node{
 		Kind: yaml.SequenceNode,
@@ -2774,7 +2774,7 @@ var nodeEncodeDecodeTests = []struct {
 		}},
 	},
 }, {
-	map[string]interface{}{"a": "b"},
+	map[string]any{"a": "b"},
 	"a: b",
 	yaml.Node{
 		Kind: yaml.MappingNode,
@@ -2796,7 +2796,7 @@ func TestNodeEncodeDecode(t *testing.T) {
 		t.Run(fmt.Sprintf("Test%d", i+1), func(t *testing.T) {
 			a := require.New(t)
 
-			var v interface{}
+			var v any
 			a.NoError(item.node.Decode(&v))
 			a.Equal(item.value, v)
 
