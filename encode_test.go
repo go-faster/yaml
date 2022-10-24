@@ -16,6 +16,7 @@
 package yaml_test
 
 import (
+	"encoding"
 	"fmt"
 	"math"
 	"net"
@@ -132,6 +133,10 @@ var marshalTests = []struct {
 	},
 	{
 		map[string]interface{}{"v": nil},
+		"v: null\n",
+	},
+	{
+		map[string]any{"v": ptrTo[any](nil)},
 		"v: null\n",
 	},
 	{
@@ -352,16 +357,66 @@ var marshalTests = []struct {
 			T4 *time.Time "t4,omitempty"
 		}{
 			T2: time.Date(2018, 1, 9, 10, 40, 47, 0, time.UTC),
-			T4: newTime(time.Date(2098, 1, 9, 10, 40, 47, 0, time.UTC)),
+			T4: ptrTo(time.Date(2098, 1, 9, 10, 40, 47, 0, time.UTC)),
 		},
 		"t2: 2018-01-09T10:40:47Z\nt4: 2098-01-09T10:40:47Z\n",
 	},
+
 	// Nil interface that implements Marshaler.
 	{
 		map[string]yaml.Marshaler{
 			"a": nil,
 		},
 		"a: null\n",
+	},
+	{
+		map[string]encoding.TextMarshaler{
+			"a": nil,
+		},
+		"a: null\n",
+	},
+
+	// Map of any type.
+	//
+	// https://github.com/go-yaml/yaml/issues/912
+	{
+		map[string]any{
+			"a": time.Date(2018, 1, 9, 10, 40, 47, 0, time.UTC),
+			"b": ptrTo(time.Date(2098, 1, 9, 10, 40, 47, 0, time.UTC)),
+			"c": (*time.Time)(nil),
+		},
+		"a: 2018-01-09T10:40:47Z\nb: 2098-01-09T10:40:47Z\nc: null\n",
+	},
+	{
+		map[string]any{
+			// *any -> time.Time
+			"a": ptrTo[any](time.Date(2018, 1, 9, 10, 40, 47, 0, time.UTC)),
+			// *any -> *time.Time
+			"b": ptrTo[any](ptrTo(time.Date(2098, 1, 9, 10, 40, 47, 0, time.UTC))),
+		},
+		"a: 2018-01-09T10:40:47Z\nb: 2098-01-09T10:40:47Z\n",
+	},
+	{
+		map[string]any{
+			"a": yaml.Node{
+				Kind:  yaml.ScalarNode,
+				Value: "foo",
+			},
+			"b": &yaml.Node{
+				Kind:  yaml.ScalarNode,
+				Value: "bar",
+			},
+			"c": (*yaml.Node)(nil),
+		},
+		"a: foo\nb: bar\nc: null\n",
+	},
+	{
+		map[string]any{
+			"a": time.Second,
+			"b": ptrTo[time.Duration](time.Second),
+			"c": (*time.Duration)(nil),
+		},
+		"a: 1s\nb: 1s\nc: null\n",
 	},
 
 	// Flow flag
@@ -529,7 +584,7 @@ var marshalTests = []struct {
 		"a: 2015-02-24T18:19:39Z\n",
 	},
 	{
-		map[string]*time.Time{"a": newTime(time.Date(2015, 2, 24, 18, 19, 39, 0, time.UTC))},
+		map[string]*time.Time{"a": ptrTo(time.Date(2015, 2, 24, 18, 19, 39, 0, time.UTC))},
 		"a: 2015-02-24T18:19:39Z\n",
 	},
 	{
@@ -571,7 +626,7 @@ var marshalTests = []struct {
 
 	// Check indentation of maps inside sequences inside maps.
 	{
-		map[string]interface{}{"a": map[string]interface{}{"b": []map[string]int{{"c": 1, "d": 2}}}},
+		map[string]any{"a": map[string]any{"b": []map[string]int{{"c": 1, "d": 2}}}},
 		"a:\n    b:\n        -   c: 1\n            d: 2\n",
 	},
 
@@ -718,7 +773,7 @@ func (errWriter) Write([]byte) (int, error) {
 }
 
 var marshalErrorTests = []struct {
-	value interface{}
+	value any
 	error string
 	panic string
 }{
@@ -806,24 +861,24 @@ func TestMarshalTypeCache(t *testing.T) {
 
 var marshalerTests = []struct {
 	data  string
-	value interface{}
+	value any
 }{
-	{"_:\n    hi: there\n", map[interface{}]interface{}{"hi": "there"}},
-	{"_:\n    - 1\n    - A\n", []interface{}{1, "A"}},
+	{"_:\n    hi: there\n", map[any]any{"hi": "there"}},
+	{"_:\n    - 1\n    - A\n", []any{1, "A"}},
 	{"_: 10\n", 10},
 	{"_: null\n", nil},
 	{"_: BAR!\n", "BAR!"},
 }
 
 type marshalerType struct {
-	value interface{}
+	value any
 }
 
 func (o marshalerType) MarshalText() ([]byte, error) {
 	panic("MarshalText called on type with MarshalYAML")
 }
 
-func (o marshalerType) MarshalYAML() (interface{}, error) {
+func (o marshalerType) MarshalYAML() (any, error) {
 	return o.value, nil
 }
 
@@ -859,7 +914,7 @@ func TestMarshalerWholeDocument(t *testing.T) {
 
 type failingMarshaler struct{}
 
-func (ft *failingMarshaler) MarshalYAML() (interface{}, error) {
+func (ft *failingMarshaler) MarshalYAML() (any, error) {
 	return nil, errFailing
 }
 
@@ -874,7 +929,7 @@ func TestSetIndent(t *testing.T) {
 	var buf strings.Builder
 	enc := yaml.NewEncoder(&buf)
 	enc.SetIndent(8)
-	a.NoError(enc.Encode(map[string]interface{}{"a": map[string]interface{}{"b": map[string]string{"c": "d"}}}))
+	a.NoError(enc.Encode(map[string]any{"a": map[string]any{"b": map[string]string{"c": "d"}}}))
 	a.NoError(enc.Close())
 	a.Equal("a:\n        b:\n                c: d\n", buf.String())
 }
@@ -882,7 +937,7 @@ func TestSetIndent(t *testing.T) {
 func TestSortedOutput(t *testing.T) {
 	a := require.New(t)
 
-	order := []interface{}{
+	order := []any{
 		false,
 		true,
 		1,
@@ -930,7 +985,7 @@ func TestSortedOutput(t *testing.T) {
 		"e4b",
 		"e21a",
 	}
-	m := make(map[interface{}]int)
+	m := make(map[any]int)
 	for _, k := range order {
 		m[k] = 1
 	}
@@ -950,7 +1005,7 @@ func TestSortedOutput(t *testing.T) {
 
 		index := strings.Index(out, "\n"+repr+":")
 		a.NotEqual(-1, index, "%#v is not in the output: %#v", k, out)
-		var prev interface{}
+		var prev any
 		if i > 0 {
 			prev = order[i-1]
 		}
@@ -959,15 +1014,15 @@ func TestSortedOutput(t *testing.T) {
 	}
 }
 
-func newTime(t time.Time) *time.Time {
-	return &t
+func ptrTo[T any](val T) *T {
+	return &val
 }
 
 func testEncodeDecodeString(t *testing.T, input string) {
 	t.Run("String", func(t *testing.T) {
 		tests := []struct {
 			name  string
-			input interface{}
+			input any
 		}{
 			{
 				"Scalar",
@@ -1170,4 +1225,19 @@ func TestEncodeDecodeString(t *testing.T) {
 			testEncodeDecodeString(t, tt)
 		})
 	}
+}
+
+func TestFoo(t *testing.T) {
+	require.NotPanics(t, func() {
+		yaml.Marshal(map[string]any{
+			"t2": yaml.Node{
+				Kind:  yaml.ScalarNode,
+				Value: "foo",
+			},
+			"t4": &yaml.Node{
+				Kind:  yaml.ScalarNode,
+				Value: "foo",
+			},
+		})
+	})
 }
