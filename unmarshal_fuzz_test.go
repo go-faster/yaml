@@ -31,7 +31,7 @@ func FuzzUnmarshal(f *testing.F) {
 			_ = yaml.Unmarshal(input, &n)
 		})
 		t.Run("Interface", func(t *testing.T) {
-			var v interface{}
+			var v any
 			_ = yaml.Unmarshal(input, &v)
 		})
 	})

@@ -58,7 +58,7 @@ func TestLimits(t *testing.T) {
 			t.Logf("Test %s", tc.name)
 			a := require.New(t)
 
-			var v interface{}
+			var v any
 			err := yaml.Unmarshal(tc.data, &v)
 			if len(tc.error) > 0 {
 				a.Error(err)
@@ -127,7 +127,7 @@ func benchmark(b *testing.B, name string) {
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
-			var v interface{}
+			var v any
 			err := yaml.Unmarshal(t.data, &v)
 			if len(t.error) > 0 {
 				if err == nil {

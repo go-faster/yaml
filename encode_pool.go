@@ -3,7 +3,7 @@ package yaml
 import "sync"
 
 var encoderPool = &sync.Pool{
-	New: func() interface{} {
+	New: func() any {
 		e := &encoder{}
 		yaml_emitter_initialize(&e.emitter)
 		return e

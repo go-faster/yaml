@@ -3,7 +3,7 @@ package yaml
 import "sync"
 
 var parserPool = &sync.Pool{
-	New: func() interface{} {
+	New: func() any {
 		p := &parser{}
 		if !yaml_parser_initialize(&p.parser) {
 			panic("failed to initialize YAML emitter")

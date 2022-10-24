@@ -11,16 +11,16 @@ import (
 
 func BenchmarkUnmarshal(b *testing.B) {
 	// TODO(tdakkota): add more benchmarks.
-	input, err := json.Marshal(map[string]interface{}{
+	input, err := json.Marshal(map[string]any{
 		"foo": []string{"bar", "baz"},
-		"key": map[string]interface{}{
+		"key": map[string]any{
 			"a": "b",
 			"c": "d",
 		},
 	})
 	require.NoError(b, err)
 
-	var output map[string]interface{}
+	var output map[string]any
 	b.SetBytes(int64(len(input)))
 	b.ReportAllocs()
 	b.ResetTimer()

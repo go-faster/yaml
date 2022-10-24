@@ -36,7 +36,7 @@ import (
 var marshalIntTest = 123
 
 var marshalTests = []struct {
-	value interface{}
+	value any
 	data  string
 }{
 	{
@@ -56,7 +56,7 @@ var marshalTests = []struct {
 		"v: hi\n",
 	},
 	{
-		map[string]interface{}{"v": "hi"},
+		map[string]any{"v": "hi"},
 		"v: hi\n",
 	},
 	{
@@ -68,19 +68,19 @@ var marshalTests = []struct {
 		"v: \"false\"\n",
 	},
 	{
-		map[string]interface{}{"v": true},
+		map[string]any{"v": true},
 		"v: true\n",
 	},
 	{
-		map[string]interface{}{"v": false},
+		map[string]any{"v": false},
 		"v: false\n",
 	},
 	{
-		map[string]interface{}{"v": 10},
+		map[string]any{"v": 10},
 		"v: 10\n",
 	},
 	{
-		map[string]interface{}{"v": -10},
+		map[string]any{"v": -10},
 		"v: -10\n",
 	},
 	{
@@ -88,7 +88,7 @@ var marshalTests = []struct {
 		"v: 42\n",
 	},
 	{
-		map[string]interface{}{"v": int64(4294967296)},
+		map[string]any{"v": int64(4294967296)},
 		"v: 4294967296\n",
 	},
 	{
@@ -100,39 +100,39 @@ var marshalTests = []struct {
 		"v: 4294967296\n",
 	},
 	{
-		map[string]interface{}{"v": "10"},
+		map[string]any{"v": "10"},
 		"v: \"10\"\n",
 	},
 	{
-		map[string]interface{}{"v": 0.1},
+		map[string]any{"v": 0.1},
 		"v: 0.1\n",
 	},
 	{
-		map[string]interface{}{"v": float64(0.1)},
+		map[string]any{"v": float64(0.1)},
 		"v: 0.1\n",
 	},
 	{
-		map[string]interface{}{"v": float32(0.99)},
+		map[string]any{"v": float32(0.99)},
 		"v: 0.99\n",
 	},
 	{
-		map[string]interface{}{"v": -0.1},
+		map[string]any{"v": -0.1},
 		"v: -0.1\n",
 	},
 	{
-		map[string]interface{}{"v": math.Inf(+1)},
+		map[string]any{"v": math.Inf(+1)},
 		"v: .inf\n",
 	},
 	{
-		map[string]interface{}{"v": math.Inf(-1)},
+		map[string]any{"v": math.Inf(-1)},
 		"v: -.inf\n",
 	},
 	{
-		map[string]interface{}{"v": math.NaN()},
+		map[string]any{"v": math.NaN()},
 		"v: .nan\n",
 	},
 	{
-		map[string]interface{}{"v": nil},
+		map[string]any{"v": nil},
 		"v: null\n",
 	},
 	{
@@ -140,7 +140,7 @@ var marshalTests = []struct {
 		"v: null\n",
 	},
 	{
-		map[string]interface{}{"v": ""},
+		map[string]any{"v": ""},
 		"v: \"\"\n",
 	},
 	{
@@ -152,15 +152,15 @@ var marshalTests = []struct {
 		"v:\n    - A\n    - |-\n        B\n        C\n",
 	},
 	{
-		map[string][]interface{}{"v": {"A", 1, map[string][]int{"B": {2, 3}}}},
+		map[string][]any{"v": {"A", 1, map[string][]int{"B": {2, 3}}}},
 		"v:\n    - A\n    - 1\n    -   B:\n            - 2\n            - 3\n",
 	},
 	{
-		map[string]interface{}{"a": map[interface{}]interface{}{"b": "c"}},
+		map[string]any{"a": map[any]any{"b": "c"}},
 		"a:\n    b: c\n",
 	},
 	{
-		map[string]interface{}{"a": "-"},
+		map[string]any{"a": "-"},
 		"a: '-'\n",
 	},
 

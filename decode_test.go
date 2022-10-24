@@ -38,7 +38,7 @@ var unmarshalIntTest = 123
 
 var unmarshalTests = []struct {
 	data  string
-	value interface{}
+	value any
 }{
 	{
 		"",
@@ -52,7 +52,7 @@ var unmarshalTests = []struct {
 		map[string]string{"v": "hi"},
 	},
 	{
-		"v: hi", map[string]interface{}{"v": "hi"},
+		"v: hi", map[string]any{"v": "hi"},
 	},
 	{
 		"v: true",
@@ -60,19 +60,19 @@ var unmarshalTests = []struct {
 	},
 	{
 		"v: true",
-		map[string]interface{}{"v": true},
+		map[string]any{"v": true},
 	},
 	{
 		"v: 10",
-		map[string]interface{}{"v": 10},
+		map[string]any{"v": 10},
 	},
 	{
 		"v: 0b10",
-		map[string]interface{}{"v": 2},
+		map[string]any{"v": 2},
 	},
 	{
 		"v: 0xA",
-		map[string]interface{}{"v": 10},
+		map[string]any{"v": 10},
 	},
 	{
 		"v: 4294967296",
@@ -80,27 +80,27 @@ var unmarshalTests = []struct {
 	},
 	{
 		"v: 0.1",
-		map[string]interface{}{"v": 0.1},
+		map[string]any{"v": 0.1},
 	},
 	{
 		"v: .1",
-		map[string]interface{}{"v": 0.1},
+		map[string]any{"v": 0.1},
 	},
 	{
 		"v: .Inf",
-		map[string]interface{}{"v": math.Inf(+1)},
+		map[string]any{"v": math.Inf(+1)},
 	},
 	{
 		"v: -.Inf",
-		map[string]interface{}{"v": math.Inf(-1)},
+		map[string]any{"v": math.Inf(-1)},
 	},
 	{
 		"v: -10",
-		map[string]interface{}{"v": -10},
+		map[string]any{"v": -10},
 	},
 	{
 		"v: -.1",
-		map[string]interface{}{"v": -0.1},
+		map[string]any{"v": -0.1},
 	},
 
 	// Simple values.
@@ -112,19 +112,19 @@ var unmarshalTests = []struct {
 	// Floats from spec
 	{
 		"canonical: 6.8523e+5",
-		map[string]interface{}{"canonical": 6.8523e+5},
+		map[string]any{"canonical": 6.8523e+5},
 	},
 	{
 		"expo: 685.230_15e+03",
-		map[string]interface{}{"expo": 685.23015e+03},
+		map[string]any{"expo": 685.23015e+03},
 	},
 	{
 		"fixed: 685_230.15",
-		map[string]interface{}{"fixed": 685230.15},
+		map[string]any{"fixed": 685230.15},
 	},
 	{
 		"neginf: -.inf",
-		map[string]interface{}{"neginf": math.Inf(-1)},
+		map[string]any{"neginf": math.Inf(-1)},
 	},
 	{
 		"fixed: 685_230.15",
@@ -136,27 +136,27 @@ var unmarshalTests = []struct {
 	// Bools are per 1.2 spec.
 	{
 		"canonical: true",
-		map[string]interface{}{"canonical": true},
+		map[string]any{"canonical": true},
 	},
 	{
 		"canonical: false",
-		map[string]interface{}{"canonical": false},
+		map[string]any{"canonical": false},
 	},
 	{
 		"bool: True",
-		map[string]interface{}{"bool": true},
+		map[string]any{"bool": true},
 	},
 	{
 		"bool: False",
-		map[string]interface{}{"bool": false},
+		map[string]any{"bool": false},
 	},
 	{
 		"bool: TRUE",
-		map[string]interface{}{"bool": true},
+		map[string]any{"bool": true},
 	},
 	{
 		"bool: FALSE",
-		map[string]interface{}{"bool": false},
+		map[string]any{"bool": false},
 	},
 	// For backwards compatibility with 1.1, decoding old strings into typed values still works.
 	{
@@ -182,43 +182,43 @@ var unmarshalTests = []struct {
 	// Ints from spec
 	{
 		"canonical: 685230",
-		map[string]interface{}{"canonical": 685230},
+		map[string]any{"canonical": 685230},
 	},
 	{
 		"decimal: +685_230",
-		map[string]interface{}{"decimal": 685230},
+		map[string]any{"decimal": 685230},
 	},
 	{
 		"octal: 02472256",
-		map[string]interface{}{"octal": 685230},
+		map[string]any{"octal": 685230},
 	},
 	{
 		"octal: -02472256",
-		map[string]interface{}{"octal": -685230},
+		map[string]any{"octal": -685230},
 	},
 	{
 		"octal: 0o2472256",
-		map[string]interface{}{"octal": 685230},
+		map[string]any{"octal": 685230},
 	},
 	{
 		"octal: -0o2472256",
-		map[string]interface{}{"octal": -685230},
+		map[string]any{"octal": -685230},
 	},
 	{
 		"hexa: 0x_0A_74_AE",
-		map[string]interface{}{"hexa": 685230},
+		map[string]any{"hexa": 685230},
 	},
 	{
 		"bin: 0b1010_0111_0100_1010_1110",
-		map[string]interface{}{"bin": 685230},
+		map[string]any{"bin": 685230},
 	},
 	{
 		"bin: -0b101010",
-		map[string]interface{}{"bin": -42},
+		map[string]any{"bin": -42},
 	},
 	{
 		"bin: -0b1000000000000000000000000000000000000000000000000000000000000000",
-		map[string]interface{}{"bin": func() interface{} {
+		map[string]any{"bin": func() any {
 			val := int64(-9223372036854775808)
 			if strconv.IntSize == 64 {
 				return int(val)
@@ -236,19 +236,19 @@ var unmarshalTests = []struct {
 	// Nulls from spec
 	{
 		"empty:",
-		map[string]interface{}{"empty": nil},
+		map[string]any{"empty": nil},
 	},
 	{
 		"canonical: ~",
-		map[string]interface{}{"canonical": nil},
+		map[string]any{"canonical": nil},
 	},
 	{
 		"english: null",
-		map[string]interface{}{"english": nil},
+		map[string]any{"english": nil},
 	},
 	{
 		"~: null key",
-		map[interface{}]string{nil: "null key"},
+		map[any]string{nil: "null key"},
 	},
 	{
 		"empty:",
@@ -258,7 +258,7 @@ var unmarshalTests = []struct {
 	// Flow sequence
 	{
 		"seq: [A,B]",
-		map[string]interface{}{"seq": []interface{}{"A", "B"}},
+		map[string]any{"seq": []any{"A", "B"}},
 	},
 	{
 		"seq: [A,B,C,]",
@@ -274,7 +274,7 @@ var unmarshalTests = []struct {
 	},
 	{
 		"seq: [A,1,C]",
-		map[string]interface{}{"seq": []interface{}{"A", 1, "C"}},
+		map[string]any{"seq": []any{"A", 1, "C"}},
 	},
 	// Question marks in plain scalars in flow collections
 	//
@@ -282,8 +282,8 @@ var unmarshalTests = []struct {
 	// https://github.com/yaml/libyaml/pull/105.
 	{
 		"- [a?string]",
-		[]interface{}{
-			[]interface{}{
+		[]any{
+			[]any{
 				"a?string",
 			},
 		},
@@ -291,25 +291,25 @@ var unmarshalTests = []struct {
 	{
 
 		"- a?string\n- another ? string\n- key: value?\n- [a?string]\n- [another ? string]\n- {key: value? }\n- {key: value?}\n- {key?: value }\n",
-		[]interface{}{
+		[]any{
 			"a?string",
 			"another ? string",
-			map[string]interface{}{
+			map[string]any{
 				"key": "value?",
 			},
-			[]interface{}{
+			[]any{
 				"a?string",
 			},
-			[]interface{}{
+			[]any{
 				"another ? string",
 			},
-			map[string]interface{}{
+			map[string]any{
 				"key": "value?",
 			},
-			map[string]interface{}{
+			map[string]any{
 				"key": "value?",
 			},
-			map[string]interface{}{
+			map[string]any{
 				"key?": "value",
 			},
 		},
@@ -317,33 +317,33 @@ var unmarshalTests = []struct {
 	// https://github.com/yaml/libyaml/pull/104.
 	{
 		"- [\"http://foo\"]",
-		[]interface{}{
-			[]interface{}{"http://foo"},
+		[]any{
+			[]any{"http://foo"},
 		},
 	},
 	{
 		"- { \"foo::\": bar }",
-		[]interface{}{
-			map[string]interface{}{"foo::": "bar"},
+		[]any{
+			map[string]any{"foo::": "bar"},
 		},
 	},
 	{
 		"- [ \":foo\" ]",
-		[]interface{}{
-			[]interface{}{":foo"},
+		[]any{
+			[]any{":foo"},
 		},
 	},
 	{
 		"- [ \"foo:\" ]",
-		[]interface{}{
-			[]interface{}{"foo:"},
+		[]any{
+			[]any{"foo:"},
 		},
 	},
 
 	// Block sequence
 	{
 		"seq:\n - A\n - B",
-		map[string]interface{}{"seq": []interface{}{"A", "B"}},
+		map[string]any{"seq": []any{"A", "B"}},
 	},
 	{
 		"seq:\n - A\n - B\n - C",
@@ -359,7 +359,7 @@ var unmarshalTests = []struct {
 	},
 	{
 		"seq:\n - A\n - 1\n - C",
-		map[string]interface{}{"seq": []interface{}{"A", 1, "C"}},
+		map[string]any{"seq": []any{"A", 1, "C"}},
 	},
 
 	// Literal block scalar
@@ -385,12 +385,12 @@ var unmarshalTests = []struct {
 	// Map inside interface with no type hints.
 	{
 		"a: {b: c}",
-		map[interface{}]interface{}{"a": map[string]interface{}{"b": "c"}},
+		map[any]any{"a": map[string]any{"b": "c"}},
 	},
 	// Non-string map inside interface with no type hints.
 	{
 		"a: {b: c, 1: d}",
-		map[interface{}]interface{}{"a": map[interface{}]interface{}{"b": "c", 1: "d"}},
+		map[any]any{"a": map[any]any{"b": "c", 1: "d"}},
 	},
 
 	// Structs and type conversions.
@@ -601,7 +601,7 @@ var unmarshalTests = []struct {
 	// Quoted values.
 	{
 		"'1': '\"2\"'",
-		map[interface{}]interface{}{"1": "\"2\""},
+		map[any]any{"1": "\"2\""},
 	},
 	{
 		"v:\n- A\n- 'B\n\n  C'\n",
@@ -609,7 +609,7 @@ var unmarshalTests = []struct {
 	},
 	{
 		"escaped slash: \"a\\/b\"",
-		map[interface{}]interface{}{"escaped slash": "a/b"},
+		map[any]any{"escaped slash": "a/b"},
 	},
 	// Quoted, with escaped surrogate pairs.
 	//
@@ -644,34 +644,34 @@ var unmarshalTests = []struct {
 	// Explicit tags.
 	{
 		"v: !!float '1.1'",
-		map[string]interface{}{"v": 1.1},
+		map[string]any{"v": 1.1},
 	},
 	{
 		"v: !!float 0",
-		map[string]interface{}{"v": float64(0)},
+		map[string]any{"v": float64(0)},
 	},
 	{
 		"v: !!float -1",
-		map[string]interface{}{"v": float64(-1)},
+		map[string]any{"v": float64(-1)},
 	},
 	{
 		"v: !!null ''",
-		map[string]interface{}{"v": nil},
+		map[string]any{"v": nil},
 	},
 	{
 		"%TAG !y! tag:yaml.org,2002:\n---\nv: !y!int '1'",
-		map[string]interface{}{"v": 1},
+		map[string]any{"v": 1},
 	},
 	// https://github.com/yaml/libyaml/pull/179.
 	{
 		"{\n  foo : !!str,\n  !!str : bar,\n}\n",
-		map[string]interface{}{"foo": "", "": "bar"},
+		map[string]any{"foo": "", "": "bar"},
 	},
 
 	// Non-specific tag (Issue #75)
 	{
 		"v: ! test",
-		map[string]interface{}{"v": "test"},
+		map[string]any{"v": "test"},
 	},
 
 	// Anchors and aliases.
@@ -712,7 +712,7 @@ var unmarshalTests = []struct {
 	},
 	{
 		"foo: null",
-		map[string]interface{}{"foo": nil},
+		map[string]any{"foo": nil},
 	},
 
 	// Support for ~
@@ -726,7 +726,7 @@ var unmarshalTests = []struct {
 	},
 	{
 		"foo: ~",
-		map[string]interface{}{"foo": nil},
+		map[string]any{"foo": nil},
 	},
 
 	// Ignored field
@@ -797,27 +797,27 @@ var unmarshalTests = []struct {
 	// bug 1243827
 	{
 		"a: -b_c",
-		map[string]interface{}{"a": "-b_c"},
+		map[string]any{"a": "-b_c"},
 	},
 	{
 		"a: +b_c",
-		map[string]interface{}{"a": "+b_c"},
+		map[string]any{"a": "+b_c"},
 	},
 	{
 		"a: 50cent_of_dollar",
-		map[string]interface{}{"a": "50cent_of_dollar"},
+		map[string]any{"a": "50cent_of_dollar"},
 	},
 
 	// issue #295 (allow scalars with colons in flow mappings and sequences)
 	{
 		"a: {b: https://github.com/go-yaml/yaml}",
-		map[string]interface{}{"a": map[string]interface{}{
+		map[string]any{"a": map[string]any{
 			"b": "https://github.com/go-yaml/yaml",
 		}},
 	},
 	{
 		"a: [https://github.com/go-yaml/yaml]",
-		map[string]interface{}{"a": []interface{}{"https://github.com/go-yaml/yaml"}},
+		map[string]any{"a": []any{"https://github.com/go-yaml/yaml"}},
 	},
 
 	// Duration
@@ -855,7 +855,7 @@ var unmarshalTests = []struct {
 	// Issue #39.
 	{
 		"a:\n b:\n  c: d\n",
-		map[string]struct{ B interface{} }{"a": {map[string]interface{}{"c": "d"}}},
+		map[string]struct{ B any }{"a": {map[string]any{"c": "d"}}},
 	},
 
 	// Custom map type.
@@ -915,7 +915,7 @@ var unmarshalTests = []struct {
 	{
 		// explicit string tag
 		"a: !!str 2015-01-01",
-		map[string]interface{}{"a": "2015-01-01"},
+		map[string]any{"a": "2015-01-01"},
 	},
 	{
 		// explicit timestamp tag on quoted string
@@ -930,17 +930,17 @@ var unmarshalTests = []struct {
 	{
 		// quoted string that's a valid timestamp
 		"a: \"2015-01-01\"",
-		map[string]interface{}{"a": "2015-01-01"},
+		map[string]any{"a": "2015-01-01"},
 	},
 	{
 		// explicit timestamp tag into interface.
 		"a: !!timestamp \"2015-01-01\"",
-		map[string]interface{}{"a": time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)},
+		map[string]any{"a": time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)},
 	},
 	{
 		// implicit timestamp tag into interface.
 		"a: 2015-01-01",
-		map[string]interface{}{"a": time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)},
+		map[string]any{"a": time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)},
 	},
 
 	// Encode empty lists as zero-length slices.
@@ -983,7 +983,7 @@ var unmarshalTests = []struct {
 	// yaml-test-suite 3GZX: Spec Example 7.1. Alias Nodes
 	{
 		"First occurrence: &anchor Foo\nSecond occurrence: *anchor\nOverride anchor: &anchor Bar\nReuse anchor: *anchor\n",
-		map[string]interface{}{
+		map[string]any{
 			"First occurrence":  "Foo",
 			"Second occurrence": "Foo",
 			"Override anchor":   "Bar",
@@ -1009,14 +1009,14 @@ var unmarshalTests = []struct {
 	// CRLF
 	{
 		"a: b\r\nc:\r\n- d\r\n- e\r\n",
-		map[string]interface{}{
+		map[string]any{
 			"a": "b",
-			"c": []interface{}{"d", "e"},
+			"c": []any{"d", "e"},
 		},
 	},
 }
 
-type M map[string]interface{}
+type M map[string]any
 
 type inlineB struct {
 	B       int
@@ -1056,7 +1056,7 @@ func TestUnmarshalFullTimestamp(t *testing.T) {
 	// Full timestamp in same format as encoded. This is confirmed to be
 	// properly decoded by Python as a timestamp as well.
 	str := "2015-02-24T18:19:39.123456789-03:00"
-	var i interface{}
+	var i any
 	err := yaml.Unmarshal([]byte(str), &i)
 	a.NoError(err)
 	a.IsType(time.Time{}, i)
@@ -1109,23 +1109,23 @@ func TestDecoderSingleDocument(t *testing.T) {
 
 var decoderTests = []struct {
 	data   string
-	values []interface{}
+	values []any
 }{{
 	"",
 	nil,
 }, {
 	"a: b",
-	[]interface{}{
-		map[string]interface{}{"a": "b"},
+	[]any{
+		map[string]any{"a": "b"},
 	},
 }, {
 	"---\na: b\n...\n",
-	[]interface{}{
-		map[string]interface{}{"a": "b"},
+	[]any{
+		map[string]any{"a": "b"},
 	},
 }, {
 	"---\n'hello'\n...\n---\ngoodbye\n...\n",
-	[]interface{}{
+	[]any{
 		"hello",
 		"goodbye",
 	},
@@ -1140,12 +1140,12 @@ func TestDecoder(t *testing.T) {
 				return func(t *testing.T) {
 					a := require.New(t)
 					var (
-						values []interface{}
+						values []any
 						r      = wrap(strings.NewReader(item.data))
 						dec    = yaml.NewDecoder(r)
 					)
 					for {
-						var value interface{}
+						var value any
 						err := dec.Decode(&value)
 						if err == io.EOF {
 							break
@@ -1169,7 +1169,7 @@ func TestDecoderReadError(t *testing.T) {
 func TestUnmarshalNaN(t *testing.T) {
 	a := require.New(t)
 
-	value := map[string]interface{}{}
+	value := map[string]any{}
 	err := yaml.Unmarshal([]byte("notanum: .NaN"), &value)
 	a.NoError(err)
 	a.True(math.IsNaN(value["notanum"].(float64)))
@@ -1188,7 +1188,7 @@ func TestUnmarshalDurationInt(t *testing.T) {
 func TestUnmarshalArray(t *testing.T) {
 	tests := []struct {
 		data  string
-		value interface{}
+		value any
 		err   string
 	}{
 		{"- 1\n- 2\n- 3", [3]int{1, 2, 3}, ""},
@@ -1313,7 +1313,7 @@ func TestUnmarshalErrors(t *testing.T) {
 			t.Logf("Input: %q", item.data)
 			a := require.New(t)
 
-			var value interface{}
+			var value any
 			err := yaml.Unmarshal([]byte(item.data), &value)
 			a.Error(err)
 			a.Regexp(item.error, err.Error())
@@ -1328,7 +1328,7 @@ func TestDecoderErrors(t *testing.T) {
 			t.Logf("Input: %q", item.data)
 			a := require.New(t)
 
-			var value interface{}
+			var value any
 			err := yaml.NewDecoder(strings.NewReader(item.data)).Decode(&value)
 			a.Error(err)
 			a.Regexp(item.error, err.Error())
@@ -1338,10 +1338,10 @@ func TestDecoderErrors(t *testing.T) {
 
 var unmarshalerTests = []struct {
 	data, tag string
-	value     interface{}
+	value     any
 }{
-	{"_: {hi: there}", "!!map", map[string]interface{}{"hi": "there"}},
-	{"_: [1,A]", "!!seq", []interface{}{1, "A"}},
+	{"_: {hi: there}", "!!map", map[string]any{"hi": "there"}},
+	{"_: [1,A]", "!!seq", []any{1, "A"}},
 	{"_: 10", "!!int", 10},
 	{"_: null", "!!null", nil},
 	{`_: BAR!`, "!!str", "BAR!"},
@@ -1353,7 +1353,7 @@ var unmarshalerTests = []struct {
 var unmarshalerResult = map[int]error{}
 
 type unmarshalerType struct {
-	value interface{}
+	value any
 }
 
 func (o *unmarshalerType) UnmarshalYAML(value *yaml.Node) error {
@@ -1382,10 +1382,10 @@ type unmarshalerInlinedTwice struct {
 }
 
 type obsoleteUnmarshalerType struct {
-	value interface{}
+	value any
 }
 
-func (o *obsoleteUnmarshalerType) UnmarshalYAML(unmarshal func(v interface{}) error) error {
+func (o *obsoleteUnmarshalerType) UnmarshalYAML(unmarshal func(v any) error) error {
 	if err := unmarshal(&o.value); err != nil {
 		return err
 	}
@@ -1474,7 +1474,7 @@ func TestUnmarshalerInlinedField(t *testing.T) {
 		err := yaml.Unmarshal([]byte("_: a\ninlined: b\n"), obj)
 		a.NoError(err)
 		a.Equal(&unmarshalerType{"a"}, obj.Field)
-		a.Equal(unmarshalerType{map[string]interface{}{"_": "a", "inlined": "b"}}, obj.Inlined)
+		a.Equal(unmarshalerType{map[string]any{"_": "a", "inlined": "b"}}, obj.Inlined)
 	})
 
 	t.Run("InlinedTwice", func(t *testing.T) {
@@ -1484,7 +1484,7 @@ func TestUnmarshalerInlinedField(t *testing.T) {
 		err := yaml.Unmarshal([]byte("_: a\ninlined: b\n"), obj)
 		a.NoError(err)
 		a.Equal(&unmarshalerType{"a"}, obj.InlinedTwice.Field)
-		a.Equal(unmarshalerType{map[string]interface{}{"_": "a", "inlined": "b"}}, obj.InlinedTwice.Inlined)
+		a.Equal(unmarshalerType{map[string]any{"_": "a", "inlined": "b"}}, obj.InlinedTwice.Inlined)
 	})
 }
 
@@ -1495,7 +1495,7 @@ func TestUnmarshalerWholeDocument(t *testing.T) {
 	err := yaml.Unmarshal([]byte(unmarshalerTests[0].data), obj)
 	a.NoError(err)
 
-	value, ok := obj.value.(map[string]interface{})
+	value, ok := obj.value.(map[string]any)
 	a.True(ok)
 	a.Equal(unmarshalerTests[0].value, value["_"])
 }
@@ -1515,7 +1515,7 @@ func TestUnmarshalerError(t *testing.T) {
 
 type obsoleteFailingUnmarshaler struct{}
 
-func (ft *obsoleteFailingUnmarshaler) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (ft *obsoleteFailingUnmarshaler) UnmarshalYAML(unmarshal func(any) error) error {
 	return errFailing
 }
 
@@ -1559,7 +1559,7 @@ func TestUnmarshalerRetry(t *testing.T) {
 
 type obsoleteSliceUnmarshaler []int
 
-func (su *obsoleteSliceUnmarshaler) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (su *obsoleteSliceUnmarshaler) UnmarshalYAML(unmarshal func(any) error) error {
 	var slice []int
 	err := unmarshal(&slice)
 	if err == nil {
@@ -1649,19 +1649,19 @@ inlineSequenceMap:
 func TestMerge(t *testing.T) {
 	a := require.New(t)
 
-	want := map[string]interface{}{
+	want := map[string]any{
 		"x":     1,
 		"y":     2,
 		"r":     10,
 		"label": "center/big",
 	}
 
-	wantStringMap := make(map[string]interface{})
+	wantStringMap := make(map[string]any)
 	for k, v := range want {
 		wantStringMap[fmt.Sprintf("%v", k)] = v
 	}
 
-	var m map[interface{}]interface{}
+	var m map[any]any
 	err := yaml.Unmarshal([]byte(mergeTests), &m)
 	a.NoError(err)
 
@@ -1777,10 +1777,10 @@ func TestMergeNestedStruct(t *testing.T) {
 
 	// Repeat test with a map.
 
-	var testm map[string]interface{}
-	wantm := map[string]interface{}{
+	var testm map[string]any
+	wantm := map[string]any{
 		"f": 60,
-		"inner": map[string]interface{}{
+		"inner": map[string]any{
 			"a": 10,
 		},
 		"d": 40,
@@ -1794,43 +1794,43 @@ func TestMergeNestedStruct(t *testing.T) {
 
 var unmarshalNullTests = []struct {
 	input              string
-	pristine, expected func() interface{}
+	pristine, expected func() any
 }{{
 	"null",
-	func() interface{} { var v interface{}; v = "v"; return &v },
-	func() interface{} { var v interface{}; v = nil; return &v },
+	func() any { var v any; v = "v"; return &v },
+	func() any { var v any; v = nil; return &v },
 }, {
 	"null",
-	func() interface{} { s := "s"; return &s },
-	func() interface{} { s := "s"; return &s },
+	func() any { s := "s"; return &s },
+	func() any { s := "s"; return &s },
 }, {
 	"null",
-	func() interface{} { s := "s"; sptr := &s; return &sptr },
-	func() interface{} { var sptr *string; return &sptr },
+	func() any { s := "s"; sptr := &s; return &sptr },
+	func() any { var sptr *string; return &sptr },
 }, {
 	"null",
-	func() interface{} { i := 1; return &i },
-	func() interface{} { i := 1; return &i },
+	func() any { i := 1; return &i },
+	func() any { i := 1; return &i },
 }, {
 	"null",
-	func() interface{} { i := 1; iptr := &i; return &iptr },
-	func() interface{} { var iptr *int; return &iptr },
+	func() any { i := 1; iptr := &i; return &iptr },
+	func() any { var iptr *int; return &iptr },
 }, {
 	"null",
-	func() interface{} { m := map[string]int{"s": 1}; return &m },
-	func() interface{} { var m map[string]int; return &m },
+	func() any { m := map[string]int{"s": 1}; return &m },
+	func() any { var m map[string]int; return &m },
 }, {
 	"null",
-	func() interface{} { m := map[string]int{"s": 1}; return m },
-	func() interface{} { m := map[string]int{"s": 1}; return m },
+	func() any { m := map[string]int{"s": 1}; return m },
+	func() any { m := map[string]int{"s": 1}; return m },
 }, {
 	"s2: null\ns3: null",
-	func() interface{} { m := map[string]int{"s1": 1, "s2": 2}; return m },
-	func() interface{} { m := map[string]int{"s1": 1, "s2": 2, "s3": 0}; return m },
+	func() any { m := map[string]int{"s1": 1, "s2": 2}; return m },
+	func() any { m := map[string]int{"s1": 1, "s2": 2, "s3": 0}; return m },
 }, {
 	"s2: null\ns3: null",
-	func() interface{} { m := map[string]interface{}{"s1": 1, "s2": 2}; return m },
-	func() interface{} { m := map[string]interface{}{"s1": 1, "s2": nil, "s3": nil}; return m },
+	func() any { m := map[string]any{"s1": 1, "s2": 2}; return m },
+	func() any { m := map[string]any{"s1": 1, "s2": nil, "s3": nil}; return m },
 }}
 
 func TestUnmarshalNull(t *testing.T) {
@@ -1882,7 +1882,7 @@ var unmarshalStrictTests = []struct {
 	known  bool
 	unique bool
 	data   string
-	value  interface{}
+	value  any
 	error  string
 }{{
 	known: true,
@@ -1931,10 +1931,10 @@ var unmarshalStrictTests = []struct {
 	data:   "c: 1\na: 1\nb: 2\nc: 3\n",
 	value: struct {
 		A int
-		M map[string]interface{} `yaml:",inline"`
+		M map[string]any `yaml:",inline"`
 	}{
 		A: 1,
-		M: map[string]interface{}{
+		M: map[string]any{
 			"b": 2,
 			"c": 3,
 		},
@@ -1943,7 +1943,7 @@ var unmarshalStrictTests = []struct {
 }, {
 	unique: true,
 	data:   "a: 1\n9: 2\nnull: 3\n9: 4",
-	value: map[interface{}]interface{}{
+	value: map[any]any{
 		"a": 1,
 		nil: 3,
 		9:   4,

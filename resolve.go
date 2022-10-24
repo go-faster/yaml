@@ -26,7 +26,7 @@ import (
 )
 
 type resolveMapItem struct {
-	value interface{}
+	value any
 	tag   string
 }
 
@@ -48,7 +48,7 @@ func init() {
 	t[int('.')] = '.' // Float (potentially in map)
 
 	resolveMapList := []struct {
-		v   interface{}
+		v   any
 		tag string
 		l   []string
 	}{
@@ -131,14 +131,14 @@ var yamlStyleFloat = regexp.MustCompile(`^[-+]?(\.\d+|\d+(\.\d*)?)([eE][-+]?\d+)
 // convertIntSafe converts int64 value to int value.
 //
 // If int can't fit value, it returns the original value.
-func convertIntSafe(intv int64) interface{} {
+func convertIntSafe(intv int64) any {
 	if intv >= math.MinInt && intv <= math.MaxInt {
 		return int(intv)
 	}
 	return intv
 }
 
-func resolve(tag, in string) (rtag string, out interface{}) {
+func resolve(tag, in string) (rtag string, out any) {
 	tag = shortTag(tag)
 	if !resolvableTag(tag) {
 		return tag, in

@@ -20,7 +20,7 @@ type SyntaxError struct {
 	Msg    string
 }
 
-func syntaxErr(offset, line, column int, msgf string, args ...interface{}) error {
+func syntaxErr(offset, line, column int, msgf string, args ...any) error {
 	return &SyntaxError{
 		Offset: offset,
 		Line:   line,
@@ -91,7 +91,7 @@ type UnmarshalError struct {
 	Err  error
 }
 
-func unmarshalErrf(n *Node, typ reflect.Type, msgf string, args ...interface{}) error {
+func unmarshalErrf(n *Node, typ reflect.Type, msgf string, args ...any) error {
 	return &UnmarshalError{
 		Node: n,
 		Type: typ,

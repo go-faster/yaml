@@ -14,7 +14,7 @@ type Unmarshaler interface {
 }
 
 type obsoleteUnmarshaler interface {
-	UnmarshalYAML(unmarshal func(interface{}) error) error
+	UnmarshalYAML(unmarshal func(any) error) error
 }
 
 // Unmarshal decodes the first document found within the in byte slice
@@ -50,7 +50,7 @@ type obsoleteUnmarshaler interface {
 //
 // See the documentation of Marshal for the format of tags and a list of
 // supported tag options.
-func Unmarshal(in []byte, out interface{}) (err error) {
+func Unmarshal(in []byte, out any) (err error) {
 	return unmarshal(in, out)
 }
 
@@ -81,7 +81,7 @@ func (dec *Decoder) KnownFields(enable bool) {
 //
 // See the documentation for Unmarshal for details about the
 // conversion of YAML into a Go value.
-func (dec *Decoder) Decode(v interface{}) (err error) {
+func (dec *Decoder) Decode(v any) (err error) {
 	d := newDecoder()
 	d.knownFields = dec.knownFields
 	defer handleErr(&err)
@@ -106,7 +106,7 @@ func (dec *Decoder) Decode(v interface{}) (err error) {
 //
 // See the documentation for Unmarshal for details about the
 // conversion of YAML into a Go value.
-func (n *Node) Decode(v interface{}) (err error) {
+func (n *Node) Decode(v any) (err error) {
 	d := newDecoder()
 	defer handleErr(&err)
 	out := reflect.ValueOf(v)
@@ -122,7 +122,7 @@ func (n *Node) Decode(v interface{}) (err error) {
 	return nil
 }
 
-func unmarshal(in []byte, out interface{}) (err error) {
+func unmarshal(in []byte, out any) (err error) {
 	defer handleErr(&err)
 	d := newDecoder()
 	p := newParser(in)
