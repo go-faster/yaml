@@ -21,7 +21,6 @@
 package yaml
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
 	"sync"
@@ -114,7 +113,7 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 				case "inline":
 					inline = true
 				default:
-					return nil, fmt.Errorf("unsupported flag %q in tag %q of type %s", flag, tag, st)
+					return nil, errors.Errorf("unsupported flag %q in tag %q of type %s", flag, tag, st)
 				}
 			}
 			tag = fields[0]
