@@ -1283,18 +1283,3 @@ func TestEncodeDecodeString(t *testing.T) {
 		})
 	}
 }
-
-func TestFoo(t *testing.T) {
-	require.NotPanics(t, func() {
-		yaml.Marshal(map[string]any{
-			"t2": yaml.Node{
-				Kind:  yaml.ScalarNode,
-				Value: "foo",
-			},
-			"t4": &yaml.Node{
-				Kind:  yaml.ScalarNode,
-				Value: "foo",
-			},
-		})
-	})
-}
