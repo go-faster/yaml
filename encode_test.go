@@ -790,6 +790,9 @@ var marshalErrorTests = []struct {
 	error string
 	panic string
 }{
+	// Inline struct field conflicts with other struct field.
+	//
+	// Notice that we check for the panic message here, not the error.
 	{
 		value: &struct {
 			B       int
@@ -797,12 +800,18 @@ var marshalErrorTests = []struct {
 		}{1, inlineB{2, inlineC{3}}},
 		panic: `duplicated key 'b' in struct struct \{ B int; .*`,
 	},
+
+	// Inline map key conflicts with struct field.
+	//
+	// Notice that we check error message here, not the panic. It's because
+	// key may be generated at run time, whereas struct tag is defined at
+	// compile time.
 	{
 		value: &struct {
 			A int
 			B map[string]int ",inline"
 		}{1, map[string]int{"a": 2}},
-		panic: `cannot have key "a" in inlined map: conflicts with struct field`,
+		error: `cannot have key "a" in inlined map: conflicts with struct field A`,
 	},
 
 	// Tagged string marshaling.
@@ -1273,19 +1282,4 @@ func TestEncodeDecodeString(t *testing.T) {
 			testEncodeDecodeString(t, tt)
 		})
 	}
-}
-
-func TestFoo(t *testing.T) {
-	require.NotPanics(t, func() {
-		yaml.Marshal(map[string]any{
-			"t2": yaml.Node{
-				Kind:  yaml.ScalarNode,
-				Value: "foo",
-			},
-			"t4": &yaml.Node{
-				Kind:  yaml.ScalarNode,
-				Value: "foo",
-			},
-		})
-	})
 }

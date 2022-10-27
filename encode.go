@@ -238,8 +238,12 @@ func (e *encoder) structv(tag string, in reflect.Value) {
 				keys := keyList(m.MapKeys())
 				sort.Sort(keys)
 				for _, k := range keys {
-					if _, found := sinfo.FieldsMap[k.String()]; found {
-						panic(fmt.Sprintf("cannot have key %q in inlined map: conflicts with struct field", k.String()))
+					key := k.String()
+					if f, ok := sinfo.FieldsMap[key]; ok {
+						fieldName := in.Type().Field(f.Num).Name
+						fail(&MarshalError{
+							fmt.Sprintf("cannot have key %q in inlined map: conflicts with struct field %s", key, fieldName),
+						})
 					}
 					e.marshal("", k)
 					e.flow = false

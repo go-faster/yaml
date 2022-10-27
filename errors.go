@@ -3,6 +3,8 @@ package yaml
 import (
 	"fmt"
 	"reflect"
+
+	"github.com/go-faster/errors"
 )
 
 var _ = []interface {
@@ -95,7 +97,7 @@ func unmarshalErrf(n *Node, typ reflect.Type, msgf string, args ...any) error {
 	return &UnmarshalError{
 		Node: n,
 		Type: typ,
-		Err:  fmt.Errorf(msgf, args...),
+		Err:  errors.Errorf(msgf, args...),
 	}
 }
 
