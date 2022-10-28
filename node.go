@@ -17,6 +17,24 @@ const (
 	AliasNode
 )
 
+// String implements fmt.Stringer.
+func (s Kind) String() string {
+	switch s {
+	case DocumentNode:
+		return "Document"
+	case SequenceNode:
+		return "Sequence"
+	case MappingNode:
+		return "Mapping"
+	case ScalarNode:
+		return "Scalar"
+	case AliasNode:
+		return "Alias"
+	default:
+		return fmt.Sprintf("Kind(%d)", s)
+	}
+}
+
 // Style describes the style of a node.
 type Style uint32
 
