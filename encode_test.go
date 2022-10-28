@@ -230,6 +230,16 @@ var marshalTests = []struct {
 		"\n\nliteral\n\n\ttext\n",
 		"|4\n\n\n    literal\n\n    \ttext\n",
 	},
+	// https://github.com/go-yaml/yaml/issues/804.
+	{
+		yaml.Node{
+			Kind:  yaml.ScalarNode,
+			Style: yaml.FoldedStyle,
+			Value: "foo\n  bar",
+			Tag:   "!!str",
+		},
+		">-\n    foo\n      bar\n",
+	},
 
 	// Simple values.
 	{

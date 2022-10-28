@@ -1221,34 +1221,95 @@ func TestUnmarshalArray(t *testing.T) {
 	}
 }
 
-func TestUnmarshalInlinedNodeMap(t *testing.T) {
-	t.Run("Value", func(t *testing.T) {
-		a := require.New(t)
+func TestUnmarshalNodeMap(t *testing.T) {
+	t.Run("Inline", func(t *testing.T) {
+		t.Run("Value", func(t *testing.T) {
+			a := require.New(t)
 
-		var val struct {
-			A      int
-			Inline map[string]yaml.Node `yaml:",inline"`
-		}
-		a.NoError(yaml.Unmarshal([]byte("a: 1\nb: 2\nc: 3"), &val))
+			var val struct {
+				A      int
+				Inline map[string]yaml.Node `yaml:",inline"`
+			}
+			a.NoError(yaml.Unmarshal([]byte("a: 1\nb: 2\nc: 3"), &val))
 
-		a.Equal(1, val.A)
-		inline := val.Inline
-		a.Equal("2", inline["b"].Value)
-		a.Equal("3", inline["c"].Value)
+			a.Equal(1, val.A)
+			inline := val.Inline
+			a.Equal("2", inline["b"].Value)
+			a.Equal("3", inline["c"].Value)
+		})
+		t.Run("Pointer", func(t *testing.T) {
+			a := require.New(t)
+
+			var val struct {
+				A      int
+				Inline map[string]*yaml.Node `yaml:",inline"`
+			}
+			a.NoError(yaml.Unmarshal([]byte("a: 1\nb: 2\nc: 3"), &val))
+
+			a.Equal(1, val.A)
+			inline := val.Inline
+			a.Equal("2", inline["b"].Value)
+			a.Equal("3", inline["c"].Value)
+		})
 	})
-	t.Run("Pointer", func(t *testing.T) {
+	t.Run("Issue769", func(t *testing.T) {
+		// https://github.com/go-yaml/yaml/issues/769
 		a := require.New(t)
 
 		var val struct {
-			A      int
-			Inline map[string]*yaml.Node `yaml:",inline"`
+			Foo  map[string]*yaml.Node `yaml:"foo"`
+			Bang int
 		}
-		a.NoError(yaml.Unmarshal([]byte("a: 1\nb: 2\nc: 3"), &val))
+		a.NoError(yaml.Unmarshal([]byte(`
+foo:
+  bar: !hello
+    - !a 11
+    - !b 2
+    - !c 3
+  buz: !hi
+    - 4
+    - 5
+bang: 12
+`), &val))
 
-		a.Equal(1, val.A)
-		inline := val.Inline
-		a.Equal("2", inline["b"].Value)
-		a.Equal("3", inline["c"].Value)
+		a.Equal(12, val.Bang)
+		a.Len(val.Foo, 2)
+
+		type nodeExpect struct {
+			tag   string
+			value string
+		}
+		checkContent := func(n *yaml.Node, expect []nodeExpect) {
+			a.Equal(yaml.SequenceNode, n.Kind)
+			c := n.Content
+			a.Len(c, len(expect))
+
+			for i, expect := range expect {
+				elem := c[i]
+				a.Equal(yaml.ScalarNode, elem.Kind)
+				a.Equal(expect.tag, elem.Tag)
+				a.Equal(expect.value, elem.Value)
+			}
+		}
+		{
+			bar, ok := val.Foo["bar"]
+			a.True(ok)
+			a.Equal("!hello", bar.Tag)
+			checkContent(bar, []nodeExpect{
+				{"!a", "11"},
+				{"!b", "2"},
+				{"!c", "3"},
+			})
+		}
+
+		{
+			buz, ok := val.Foo["buz"]
+			a.True(ok)
+			checkContent(buz, []nodeExpect{
+				{"!!int", "4"},
+				{"!!int", "5"},
+			})
+		}
 	})
 }
 
