@@ -83,7 +83,12 @@ func (d *DuplicateKeyError) Error() string {
 	if s == nil {
 		return fmt.Sprintf("duplicate key: %q", f.Value)
 	}
-	return fmt.Sprintf("mapping key %q already defined at line %d", s.Value, s.Line)
+	switch s.Kind {
+	case SequenceNode, MappingNode:
+		return fmt.Sprintf("mapping key already defined at line %d", s.Line)
+	default:
+		return fmt.Sprintf("mapping key %q already defined at line %d", s.Value, s.Line)
+	}
 }
 
 // UnmarshalError is an error that occurs during unmarshaling.
