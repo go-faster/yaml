@@ -863,6 +863,58 @@ var unmarshalTests = []struct {
 		"a: {b: c}",
 		M{"a": M{"b": "c"}},
 	},
+	// Complex key in map.
+	{
+		"[0, 1]: foo\n[1, 0]: bar\n",
+		map[[2]int]string{
+			{0, 1}: "foo",
+			{1, 0}: "bar",
+		},
+	},
+	{
+		"{a: A1, b: B1}: V1\n{b: B1}: V2\n",
+		map[struct {
+			A string `yaml:"a,omitempty"`
+			B string `yaml:"b"`
+		}]string{
+			{"A1", "B1"}: "V1",
+			{"", "B1"}:   "V2",
+		},
+	},
+	// https://github.com/go-yaml/yaml/issues/890
+	// https://github.com/go-yaml/yaml/pull/889
+	{
+		"?\n  K1\n: V1",
+		map[string]string{
+			"K1": "V1",
+		},
+	},
+	{
+		"?\n  a: A1\n  b: B1\n: V1",
+		map[struct{ A, B string }]string{
+			{"A1", "B1"}: "V1",
+		},
+	},
+	{
+		"?\n  - A1\n  - B1\n: V1",
+		map[[2]string]string{
+			{"A1", "B1"}: "V1",
+		},
+	},
+	{
+		"?\n  a: A1\n  b: B1\n: V1\n?\n  a: A2\n  b: B2\n: V2",
+		map[struct{ A, B string }]string{
+			{"A1", "B1"}: "V1",
+			{"A2", "B2"}: "V2",
+		},
+	},
+	{
+		"?\n  - A1\n  - B1\n: V1\n?\n  - A2\n  - B2\n: V2",
+		map[[2]string]string{
+			{"A1", "B1"}: "V1",
+			{"A2", "B2"}: "V2",
+		},
+	},
 
 	// Support encoding.TextUnmarshaler.
 	{
@@ -1344,6 +1396,15 @@ var unmarshalErrorTests = []struct {
 			"i: &i [*h,*h,*h,*h,*h,*h,*h,*h,*h]\n",
 		"yaml: line 2: document contains excessive aliasing",
 	},
+
+	// Duplicate keys.
+	{"a: 0\na: 1", `yaml: line 2: mapping key "a" already defined at line 1`},
+	{"10: 0\n10: 1", `yaml: line 2: mapping key "10" already defined at line 1`},
+	{"true: 0\ntrue: 1", `yaml: line 2: mapping key "true" already defined at line 1`},
+	{"false: 0\nfalse: 1", `yaml: line 2: mapping key "false" already defined at line 1`},
+	{"[]: 0\n[]: 1", `yaml: line 2: mapping key already defined at line 1`},
+	{"{}: 0\n{}: 1", `yaml: line 2: mapping key already defined at line 1`},
+	{"{foo: 0, bar: 0}: 0\n{bar: 0, foo: 0}: 1", `yaml: line 2: mapping key already defined at line 1`},
 
 	// https://github.com/yaml/libyaml/issues/68
 	{"double: \"quoted \\' scalar\"", "yaml: offset 16: found unknown escape character"},
