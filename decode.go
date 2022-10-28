@@ -788,7 +788,7 @@ func (d *decoder) mapping(n *Node, out reflect.Value) (good bool) {
 			ni := n.Content[i]
 			for j := i + 2; j < l; j += 2 {
 				nj := n.Content[j]
-				if ni.Kind == nj.Kind && ni.Value == nj.Value {
+				if ni.equalKey(nj) {
 					d.terrors = append(d.terrors, duplicateKeyErr(nj, ni, out.Type()))
 				}
 			}
