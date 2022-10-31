@@ -118,7 +118,7 @@ func writeJSON(e *jx.Encoder, n *Node) (rerr error) {
 	case AliasNode:
 		return writeJSON(e, n.Alias)
 	default:
-		return errors.Errorf("unknown node kind %d", n.Kind)
+		return errors.Errorf("unknown node kind %v", n.Kind)
 	}
 }
 
