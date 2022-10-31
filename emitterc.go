@@ -144,6 +144,14 @@ func yaml_emitter_set_emitter_error(emitter *yaml_emitter_t, problem string) boo
 
 // Emit an event.
 func yaml_emitter_emit(emitter *yaml_emitter_t, event *yaml_event_t) bool {
+	if head := emitter.events_head; head >= initial_queue_size {
+		// Reset the event queue.
+		//
+		// See https://github.com/go-yaml/yaml/issues/873.
+		used := emitter.events[head:]
+		emitter.events = append(emitter.events[:0], used...)
+		emitter.events_head = 0
+	}
 	emitter.events = append(emitter.events, *event)
 	for !yaml_emitter_need_more_events(emitter) {
 		event := &emitter.events[emitter.events_head]
