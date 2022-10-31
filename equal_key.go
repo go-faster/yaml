@@ -12,12 +12,15 @@ package yaml
 //     original values. It could be a problem if the original value is escaped or written in different style (10 vs 1e1).
 //     But impact of this difference is very small, go-yaml compares the original values too.
 func (n *Node) equalKey(b *Node) bool {
-	if n == nil || b == nil {
+	switch {
+	case n == nil || b == nil:
+		return false
+	case n == b:
+		return true
+	case n.Kind != b.Kind:
 		return false
 	}
-	if n.Kind != b.Kind {
-		return false
-	}
+
 	switch n.Kind {
 	case ScalarNode:
 		// FIXME(tdakkota): compare canonical values.
@@ -35,16 +38,27 @@ func (n *Node) equalKey(b *Node) bool {
 		if len(n.Content) != len(b.Content) {
 			return false
 		}
+
+		type nodePair struct {
+			Key *Node
+			Val *Node
+		}
+
+		switch len(n.Content) {
+		case 0:
+			return true
+		case 2:
+			a := nodePair{n.Content[0], n.Content[1]}
+			b := nodePair{b.Content[0], b.Content[1]}
+			return a.Key.equalKey(b.Key) && a.Val.equalKey(b.Val)
+		}
+
 		type nodeKey struct {
 			Kind       Kind
 			Value      string
 			ContentLen int
 		}
-		type nodePair struct {
-			Key *Node
-			Val *Node
-		}
-		nodes := make(map[nodeKey][]nodePair, len(n.Content)/2)
+		nodes := map[nodeKey][]nodePair{}
 		for i := 0; i < len(n.Content); i += 2 {
 			key := n.Content[i]
 			value := n.Content[i+1]
