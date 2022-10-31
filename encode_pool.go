@@ -17,6 +17,12 @@ func getEncoder() *encoder {
 }
 
 func putEncoder(e *encoder) {
+	if len(e.emitter.states) > initial_stack_size {
+		e.emitter.states = nil
+	}
+	if len(e.emitter.events) > initial_queue_size {
+		e.emitter.events = nil
+	}
 	encoderPool.Put(e)
 }
 
