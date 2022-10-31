@@ -43,8 +43,8 @@ const (
 	output_raw_buffer_size = (output_buffer_size*2 + 2)
 
 	// The size of other stacks and queues.
-	initial_stack_size  = 16
-	initial_queue_size  = 16
+	initial_stack_size  = 128
+	initial_queue_size  = 128
 	initial_string_size = 16
 )
 
