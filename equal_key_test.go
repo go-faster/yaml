@@ -16,11 +16,15 @@ func TestNode_equalKey(t *testing.T) {
 		}
 		return &n
 	}
+	theNode := mustNode(`a: 1`)
 
 	tests := []struct {
 		a, b *Node
 		want bool
 	}{
+		// Same node.
+		{theNode, theNode, true},
+
 		// Nil nodes.
 		{nil, nil, false},
 		{nil, mustNode("null"), false},
@@ -30,6 +34,9 @@ func TestNode_equalKey(t *testing.T) {
 		{mustNode("{}"), mustNode("[]"), false},
 		{mustNode("{}"), mustNode("true"), false},
 		{mustNode("[]"), mustNode("true"), false},
+		{mustNode("{}: 1"), mustNode("a: 1"), false},
+		{mustNode("{{}: 1}: 1"), mustNode("{a: 1}: 1"), false},
+		{mustNode("{{}: 1, b: 2}: 1"), mustNode("{a: 1, b: 2}: 1"), false},
 
 		// Scalars.
 		{mustNode("null"), mustNode("null"), true},
@@ -55,6 +62,7 @@ func TestNode_equalKey(t *testing.T) {
 		{mustNode("[0, 1]"), mustNode("[0]"), false},
 
 		// Objects.
+		{mustNode("{}"), mustNode("{}"), true},
 		{mustNode("a: 1"), mustNode("a: 1"), true},
 		{mustNode(`{"a": 1}`), mustNode("a: 1"), true},
 		{mustNode("a: 1"), mustNode("a: 1 # comment"), true},
@@ -64,6 +72,7 @@ func TestNode_equalKey(t *testing.T) {
 		{mustNode("a: 1"), mustNode("a: 2"), false},
 		{mustNode("a: 1"), mustNode("b: 1"), false},
 		{mustNode("a: 1\nb: 1"), mustNode("b: 1"), false},
+		{mustNode("a: 1\nb: 1\nc: 1"), mustNode("a: 1\nb: 1\nc: 2"), false},
 
 		// Objects with complex keys.
 		{mustNode("[]: 1"), mustNode("[]: 1"), true},
@@ -72,9 +81,18 @@ func TestNode_equalKey(t *testing.T) {
 		{mustNode("{b: 1, a: 1}: 1"), mustNode("{a: 1, b: 1}: 1"), true},
 
 		{mustNode("{a: 1}: 1"), mustNode("{a: 2}: 1"), false},
+		{mustNode("{a: 1, b: 2}: 1"), mustNode("{a: 1}: 1"), false},
 		{mustNode("{b: 1, a: 1}: 1"), mustNode("{a: 1, b: []}: 1"), false},
 
 		// Canonical representation. Currently not supported, but should be.
+		// !int
+		{mustNode("10"), mustNode("+10"), false},
+		{mustNode("10"), mustNode("0xa"), false},
+		{mustNode("10"), mustNode("012"), false},
+		{mustNode("10"), mustNode("0b1010"), false},
+		{mustNode("0xA"), mustNode("0xa"), false},
+		// !!float
+		{mustNode("10"), mustNode("10.0"), false},
 		{mustNode("10"), mustNode("1e1"), false},
 	}
 	for i, tt := range tests {
