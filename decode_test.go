@@ -1716,6 +1716,81 @@ func TestObsoleteUnmarshalerRetry(t *testing.T) {
 	a.Equal(obsoleteSliceUnmarshaler([]int{1}), su)
 }
 
+type inlineMapUnmarshaler map[string]string
+
+func (m inlineMapUnmarshaler) UnmarshalYAML(node *yaml.Node) error {
+	if node.Kind != yaml.MappingNode || len(node.Content)%2 != 0 {
+		return errors.New("not a map")
+	}
+	for i := 0; i < len(node.Content); i += 2 {
+		key := node.Content[i].Value
+		value := node.Content[i+1].Value
+		m[key] = value
+	}
+	return nil
+}
+
+type ptrInlineMapUnmarshaler map[string]string
+
+func (m *ptrInlineMapUnmarshaler) UnmarshalYAML(node *yaml.Node) error {
+	if node.Kind != yaml.MappingNode || len(node.Content)%2 != 0 {
+		return errors.New("not a map")
+	}
+	*m = make(map[string]string)
+	for i := 0; i < len(node.Content); i += 2 {
+		key := node.Content[i].Value
+		value := node.Content[i+1].Value
+		(*m)[key] = value
+	}
+	return nil
+}
+
+// Check UnmarshalYAML is called on inline maps.
+//
+// See https://github.com/go-yaml/yaml/issues/742.
+func TestUnmarshalerInlineMap(t *testing.T) {
+	a := require.New(t)
+
+	var (
+		direct struct {
+			A         int                  `yaml:"a"`
+			InlineMap inlineMapUnmarshaler `yaml:",inline"`
+		}
+		directByPtr struct {
+			A         int                   `yaml:"a"`
+			InlineMap *inlineMapUnmarshaler `yaml:",inline"`
+		}
+		ptr struct {
+			A         int                     `yaml:"a"`
+			InlineMap ptrInlineMapUnmarshaler `yaml:",inline"`
+		}
+		ptrByPtr struct {
+			A         int                      `yaml:"a"`
+			InlineMap *ptrInlineMapUnmarshaler `yaml:",inline"`
+		}
+	)
+	input := "a: 1\nb: 2\nc: 3"
+
+	a.NoError(yaml.Unmarshal([]byte(input), &direct))
+	a.NoError(yaml.Unmarshal([]byte(input), &directByPtr))
+	a.NoError(yaml.Unmarshal([]byte(input), &ptr))
+	a.NoError(yaml.Unmarshal([]byte(input), &ptrByPtr))
+
+	a.Equal(direct.A, 1)
+	a.Equal(directByPtr.A, 1)
+	a.Equal(ptr.A, 1)
+	a.Equal(ptrByPtr.A, 1)
+
+	// Inline map semantic does not apply here, since the field implements Unmarshaler.
+	//
+	// So, the decoder does not exclude the "a" field from the node.
+	expect := map[string]string{"a": "1", "b": "2", "c": "3"}
+	a.Equal(inlineMapUnmarshaler(expect), direct.InlineMap)
+	a.Equal(inlineMapUnmarshaler(expect), *directByPtr.InlineMap)
+	a.Equal(ptrInlineMapUnmarshaler(expect), ptr.InlineMap)
+	a.Equal(ptrInlineMapUnmarshaler(expect), *ptrByPtr.InlineMap)
+}
+
 // From http://yaml.org/type/merge.html
 var mergeTests = `
 anchors:
