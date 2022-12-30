@@ -33,12 +33,13 @@ import (
 // Parser, produces a node tree out of a libyaml event stream.
 
 type parser struct {
-	parser   yaml_parser_t
-	event    yaml_event_t
-	doc      *Node
-	anchors  map[string]*Node
-	doneInit bool
-	textless bool
+	parser        yaml_parser_t
+	event         yaml_event_t
+	doc           *Node
+	anchors       map[string]*Node
+	parentAnchors map[string]struct{}
+	doneInit      bool
+	textless      bool
 }
 
 func newParser(b []byte) *parser {
@@ -61,6 +62,7 @@ func (p *parser) init() {
 		return
 	}
 	p.anchors = make(map[string]*Node)
+	p.parentAnchors = make(map[string]struct{})
 	p.expect(yaml_STREAM_START_EVENT)
 	p.doneInit = true
 }
@@ -224,6 +226,9 @@ func (p *parser) document() *Node {
 
 func (p *parser) alias() *Node {
 	n := p.node(AliasNode, "", "", string(p.event.anchor))
+	if _, ok := p.parentAnchors[n.Value]; ok {
+		fail(unmarshalErrf(n, nil, "anchor %q value contains itself", n.Value))
+	}
 	n.Alias = p.anchors[n.Value]
 	if n.Alias == nil {
 		// FIXME: is that right error type?
@@ -269,6 +274,14 @@ func (p *parser) sequence() *Node {
 		n.Style |= FlowStyle
 	}
 	p.anchor(n, p.event.anchor)
+	// Track the anchors of the parent nodes so that we can detect
+	// recursive aliases.
+	if anchor := n.Anchor; anchor != "" {
+		p.parentAnchors[anchor] = struct{}{}
+		defer func() {
+			delete(p.parentAnchors, anchor)
+		}()
+	}
 	p.expect(yaml_SEQUENCE_START_EVENT)
 	for p.peek() != yaml_SEQUENCE_END_EVENT {
 		p.parseChild(n)
@@ -287,6 +300,14 @@ func (p *parser) mapping() *Node {
 		n.Style |= FlowStyle
 	}
 	p.anchor(n, p.event.anchor)
+	// Track the anchors of the parent nodes so that we can detect
+	// recursive aliases.
+	if anchor := n.Anchor; anchor != "" {
+		p.parentAnchors[anchor] = struct{}{}
+		defer func() {
+			delete(p.parentAnchors, anchor)
+		}()
+	}
 	p.expect(yaml_MAPPING_START_EVENT)
 	for p.peek() != yaml_MAPPING_END_EVENT {
 		k := p.parseChild(n)
@@ -324,7 +345,6 @@ func (p *parser) mapping() *Node {
 
 type decoder struct {
 	doc     *Node
-	aliases map[*Node]struct{}
 	terrors []error
 
 	stringMapType  reflect.Type
@@ -354,7 +374,6 @@ func newDecoder() *decoder {
 		generalMapType: generalMapType,
 		uniqueKeys:     true,
 	}
-	d.aliases = make(map[*Node]struct{})
 	return d
 }
 
@@ -551,15 +570,9 @@ func (d *decoder) document(n *Node, out reflect.Value) (good bool) {
 }
 
 func (d *decoder) alias(n *Node, out reflect.Value) (good bool) {
-	if _, ok := d.aliases[n]; ok {
-		// TODO this could actually be allowed in some circumstances.
-		fail(unmarshalErrf(n, out.Type(), "anchor %q value contains itself", n.Value))
-	}
-	d.aliases[n] = struct{}{}
 	d.aliasDepth++
 	good = d.unmarshal(n.Alias, out)
 	d.aliasDepth--
-	delete(d.aliases, n)
 	return good
 }
 
