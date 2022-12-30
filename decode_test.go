@@ -1626,6 +1626,52 @@ func TestUnmarshalerWholeDocument(t *testing.T) {
 	a.Equal(unmarshalerTests[0].value, value["_"])
 }
 
+type recursiveUnmarshalerProperty struct {
+	Name  string
+	Value *recursiveUnmarshalerSchema
+}
+
+type recursiveUnmarshalerProperties []recursiveUnmarshalerProperty
+
+type recursiveUnmarshalerSchema struct {
+	Properties recursiveUnmarshalerProperties `yaml:"properties"`
+}
+
+func (p *recursiveUnmarshalerProperties) UnmarshalYAML(node *yaml.Node) error {
+	if node.Kind != yaml.MappingNode {
+		return errors.New("expected mapping node")
+	}
+	for i := 0; i < len(node.Content); i += 2 {
+		var (
+			key    = node.Content[i]
+			value  = node.Content[i+1]
+			schema *recursiveUnmarshalerSchema
+		)
+		if err := value.Decode(&schema); err != nil {
+			return err
+		}
+		*p = append(*p, recursiveUnmarshalerProperty{
+			Name:  key.Value,
+			Value: schema,
+		})
+	}
+	return nil
+}
+
+func TestUnmarshalerRecursiveAlias(t *testing.T) {
+	// Check that recursive aliases are handled correctly
+	// even if type defines custom unmarshaler.
+	const input = `a:
+  properties:
+    foo: &foo
+      properties:
+        bar: *foo`
+
+	var spec map[string]*recursiveUnmarshalerSchema
+	err := yaml.Unmarshal([]byte(input), &spec)
+	require.EqualError(t, err, "yaml: line 5: anchor \"foo\" value contains itself")
+}
+
 var errFailing = errors.New("errFailing")
 
 type failingUnmarshaler struct{}
