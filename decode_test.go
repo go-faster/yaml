@@ -696,6 +696,58 @@ var unmarshalTests = []struct {
 		"a: &🤡 [1, 2]\nb: *🤡",
 		&struct{ B []int }{[]int{1, 2}},
 	},
+	{
+		"a: &🏳️‍🌈 [1, 2]\nb: *🏳️‍🌈",
+		&struct{ B []int }{[]int{1, 2}},
+	},
+	{
+		"a: &👱🏻‍♀️ [1, 2]\nb: *👱🏻‍♀️",
+		&struct{ B []int }{[]int{1, 2}},
+	},
+	// Test that YAML spec anchor names are accepted.
+	//
+	// See https://github.com/go-yaml/yaml/issues/920.
+	// Testdata taken from https://github.com/go-yaml/yaml/pull/921.
+	{
+		// >= 0x21
+		"a: &! [1, 2]\nb: *!",
+		&struct{ B []int }{[]int{1, 2}},
+	},
+	{
+		// <= 0x7E
+		"a: &~ [1, 2]\nb: *~",
+		&struct{ B []int }{[]int{1, 2}},
+	},
+	{
+		// >= 0xA0 (Start of Basic Multilingual Plane)
+		"a: &\u00A0 [1, 2]\nb: *\u00A0",
+		&struct{ B []int }{[]int{1, 2}},
+	},
+	{
+		// <= 0xD7FF (End of Basic Multilingual Plane)
+		"a: &\uD7FF [1, 2]\nb: *\uD7FF",
+		&struct{ B []int }{[]int{1, 2}},
+	},
+	{
+		// >= 0xE000 (Start of Private Use area)
+		"a: &\uE000 [1, 2]\nb: *\uE000",
+		&struct{ B []int }{[]int{1, 2}},
+	},
+	{
+		// <= 0xFFFD (End of allowed Private Use Area)
+		"a: &\uFFFD [1, 2]\nb: *\uFFFD",
+		&struct{ B []int }{[]int{1, 2}},
+	},
+	{
+		// >= 0x010000 (Start of Supplementary Planes)
+		"a: &\U00010000 [1, 2]\nb: *\U00010000",
+		&struct{ B []int }{[]int{1, 2}},
+	},
+	{
+		// >= 0x10FFFF (End of Supplementary Planes)
+		"a: &\U0010FFFF [1, 2]\nb: *\U0010FFFF",
+		&struct{ B []int }{[]int{1, 2}},
+	},
 
 	// Bug #1133337
 	{
@@ -1430,6 +1482,16 @@ var unmarshalErrorTests = []struct {
 	{"a: &, foo\n", "yaml: offset 4: did not find expected alphabetic or numeric character"},
 	{"a: foo\nb: *\n", "yaml: line 2:3: did not find expected alphabetic or numeric character"},
 	{"a: foo\nb: *,\n", "yaml: line 2:3: did not find expected alphabetic or numeric character"},
+
+	// From https://github.com/go-yaml/yaml/pull/921.
+	{"a:\n- b: *,", `yaml: line 2:5: did not find expected alphabetic or numeric character`},
+	{"a:\n- b: *a{", `yaml: line 2:5: did not find expected alphabetic or numeric character`},
+	{"a:\n- b: *a\u0019", `yaml: offset 10: control characters are not allowed`},
+	{"a:\n- b: *a\u0020", `yaml: line 2: unknown anchor "a" referenced`},
+	{"a:\n- b: *a\u007F", `yaml: offset 10: control characters are not allowed`},
+	{"a:\n- b: *a\u0099", `yaml: offset 10: control characters are not allowed`},
+	{"a:\n- b: *a\uFFFE", `yaml: offset 10: control characters are not allowed`},
+	{"a:\n- b: *a\uFFFF", `yaml: offset 10: control characters are not allowed`},
 }
 
 func TestUnmarshalErrors(t *testing.T) {
