@@ -1910,12 +1910,12 @@ func is_flow_indicator(b []byte, i int) bool {
 //
 // [yamlx] This function is not appeared in the original libyaml code.
 func is_anchor_char(b []byte, i int) bool {
-	if is_blank(b, i) || is_flow_indicator(b, i) {
+	if is_blank(b, i) || is_flow_indicator(b, i) || is_spacez(b, i) {
 		return false
 	}
 
 	r, _ := utf8.DecodeRune(b[i:])
-	if unicode.IsControl(r) || unicode.IsSpace(r) {
+	if unicode.IsControl(r) {
 		return false
 	}
 
