@@ -116,45 +116,48 @@ func (e *encoder) marshal(tag string, in reflect.Value) {
 		e.nilv()
 		return
 	}
-	iface := in.Interface()
-	switch value := iface.(type) {
-	case Node:
-		if !in.CanAddr() {
-			n := reflect.New(in.Type()).Elem()
-			n.Set(in)
-			in = n
-		}
-		e.nodev(in.Addr())
-		return
-	case *Node:
-		e.nodev(in)
-		return
-	case time.Time:
-		e.timev(tag, in)
-		return
-	case *time.Time:
-		e.timev(tag, in.Elem())
-		return
-	case time.Duration:
-		e.stringv(tag, reflect.ValueOf(value.String()))
-		return
-	case Marshaler:
-		v, err := value.MarshalYAML()
-		if err != nil {
-			fail(err)
-		}
-		if v == nil {
-			e.nilv()
+	// FIXME(tdakkota): get rid of Interface use.
+	if in.CanInterface() {
+		iface := in.Interface()
+		switch value := iface.(type) {
+		case Node:
+			if !in.CanAddr() {
+				n := reflect.New(in.Type()).Elem()
+				n.Set(in)
+				in = n
+			}
+			e.nodev(in.Addr())
 			return
+		case *Node:
+			e.nodev(in)
+			return
+		case time.Time:
+			e.timev(tag, in)
+			return
+		case *time.Time:
+			e.timev(tag, in.Elem())
+			return
+		case time.Duration:
+			e.stringv(tag, reflect.ValueOf(value.String()))
+			return
+		case Marshaler:
+			v, err := value.MarshalYAML()
+			if err != nil {
+				fail(err)
+			}
+			if v == nil {
+				e.nilv()
+				return
+			}
+			e.marshal(tag, reflect.ValueOf(v))
+			return
+		case encoding.TextMarshaler:
+			text, err := value.MarshalText()
+			if err != nil {
+				fail(err)
+			}
+			in = reflect.ValueOf(string(text))
 		}
-		e.marshal(tag, reflect.ValueOf(v))
-		return
-	case encoding.TextMarshaler:
-		text, err := value.MarshalText()
-		if err != nil {
-			fail(err)
-		}
-		in = reflect.ValueOf(string(text))
 	}
 	switch in.Kind() {
 	case reflect.Map:

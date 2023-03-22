@@ -35,6 +35,10 @@ import (
 
 var marshalIntTest = 123
 
+type embeddedType struct {
+	A string `yaml:"a"`
+}
+
 var marshalTests = []struct {
 	value any
 	data  string
@@ -515,6 +519,24 @@ var marshalTests = []struct {
 			D *inlineD `yaml:",inline"`
 		}{1, &inlineD{&inlineC{3}, 4}},
 		"a: 1\nc: 3\nd: 4\n",
+	},
+
+	// Embedded type.
+	//
+	// See https://github.com/go-yaml/yaml/issues/944.
+	{
+		struct {
+			embeddedType
+			B string `yaml:"b"`
+		}{embeddedType{A: "1"}, "2"},
+		"embeddedtype:\n    a: \"1\"\nb: \"2\"\n",
+	},
+	{
+		struct {
+			*embeddedType
+			B string `yaml:"b"`
+		}{&embeddedType{A: "1"}, "2"},
+		"embeddedtype:\n    a: \"1\"\nb: \"2\"\n",
 	},
 
 	// Map inlining

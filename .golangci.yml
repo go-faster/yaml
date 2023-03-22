@@ -95,43 +95,46 @@ issues:
         - scopelint
         - lll
     - path: _test\.go
-      text: 'structtag: struct field tag .* bad syntax for struct tag pair'
+      text: "structtag: struct field tag .* bad syntax for struct tag pair"
 
     # Ignore shadowing of err.
-    - linters: [ govet ]
+    - linters: [govet]
       text: 'declaration of "(err|ctx|log|c)"'
 
     # Ignore linters in main packages.
     - path: main\.go
-      linters: [ goconst, funlen, gocognit, gocyclo ]
+      linters: [goconst, funlen, gocognit, gocyclo]
 
-    - text: 'exported: exported .+ should have comment.*or be unexported'
-      linters: [ revive ]
+    - text: "exported: exported .+ should have comment.*or be unexported"
+      linters: [revive]
+
+    # Annoying and useless.
+    - linters: [revive, golint]
+      text: "unused-parameter"
 
     - path: encode\.go
       text: 'shadow: declaration of "tail" shadows declaration'
-      source: 'var tail string'
+      source: "var tail string"
 
     # Disable some linters for translated C code.
     - path: (apic|writerc|emitterc|parserc|scannerc|readerc|yamlh|yamlprivateh)\.go
-      linters: [ whitespace, deadcode, varcheck, ineffassign, unparam ]
+      linters: [whitespace, deadcode, varcheck, ineffassign, unparam]
     - path: (apic|writerc|emitterc|parserc|scannerc|readerc|yamlh|yamlprivateh)\.go
-      linters: [ revive ]
-      text: "(var-naming: don't use underscores|increment-decrement:|indent-error-flow:)"
+      linters: [revive]
+      text: "(var-naming: don't use underscores|increment-decrement:|indent-error-flow:|empty-block:)"
     # More precise matching:
     - path: apic\.go
-      linters: [ gocritic ]
+      linters: [gocritic]
       text: "commentFormatting"
     - path: emitterc\.go
-      linters: [ gocritic ]
+      linters: [gocritic]
       text: "(elseIf|ifElseChain)"
     - path: parserc\.go
-      linters: [ govet, gocritic ]
+      linters: [govet, gocritic]
       text: "(shadow|ifElseChain)"
     - path: scannerc\.go
-      linters: [ gocritic ]
+      linters: [gocritic]
       text: "(elseIf|ifElseChain|boolExprSimplify|commentFormatting|appendCombine)"
     - path: readerc\.go
-      linters: [ gocritic ]
+      linters: [gocritic]
       text: "(ifElseChain|paramTypeCombine)"
-
