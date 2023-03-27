@@ -13,7 +13,7 @@ import (
 
 	"github.com/go-faster/jx"
 
-	yaml "github.com/go-faster/yamlx"
+	"github.com/go-faster/yaml"
 )
 
 //go:embed testdata/yaml_suite

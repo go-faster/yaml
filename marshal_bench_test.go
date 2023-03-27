@@ -5,7 +5,7 @@ import (
 	"io"
 	"testing"
 
-	yaml "github.com/go-faster/yamlx"
+	"github.com/go-faster/yaml"
 )
 
 func generateInput() any {

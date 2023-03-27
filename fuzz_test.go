@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	yaml "github.com/go-faster/yamlx"
+	"github.com/go-faster/yaml"
 )
 
 func addFuzzingCorpus(add func(data []byte)) {
@@ -32,7 +32,7 @@ func addFuzzingCorpus(add func(data []byte)) {
 		"? \ufeff: \ufeff\n",
 
 		"scalar: >\n next\n line\n  * one\n",
-		// https://github.com/go-faster/yamlx/issues/8
+		// https://github.com/go-faster/yaml/issues/8
 		"0:\n    #00\n    - |1 \n      00",
 	}
 

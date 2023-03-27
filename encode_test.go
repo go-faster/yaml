@@ -30,7 +30,7 @@ import (
 
 	"github.com/go-faster/errors"
 
-	yaml "github.com/go-faster/yamlx"
+	"github.com/go-faster/yaml"
 )
 
 var marshalIntTest = 123
@@ -171,7 +171,7 @@ var marshalTests = []struct {
 	// Ensure correct indentation.
 	//
 	// https://github.com/go-yaml/yaml/issues/643
-	// https://github.com/go-faster/yamlx/issues/8
+	// https://github.com/go-faster/yaml/issues/8
 	{
 		[]string{" hello\nworld"},
 		"- |4-\n     hello\n    world\n",

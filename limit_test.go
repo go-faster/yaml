@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	yaml "github.com/go-faster/yamlx"
+	"github.com/go-faster/yaml"
 )
 
 var limitTests = []struct {

@@ -1,4 +1,4 @@
-# yamlx [![](https://img.shields.io/badge/go-pkg-00ADD8)](https://pkg.go.dev/github.com/go-faster/yamlx#section-documentation) [![](https://img.shields.io/codecov/c/github/go-faster/yamlx?label=cover)](https://codecov.io/gh/go-faster/yamlx) [![experimental](https://img.shields.io/badge/-experimental-blueviolet)](https://go-faster.org/docs/projects/status#experimental)
+# yamlx [![](https://img.shields.io/badge/go-pkg-00ADD8)](https://pkg.go.dev/github.com/go-faster/yaml#section-documentation) [![](https://img.shields.io/codecov/c/github/go-faster/yamlx?label=cover)](https://codecov.io/gh/go-faster/yamlx) [![experimental](https://img.shields.io/badge/-experimental-blueviolet)](https://go-faster.org/docs/projects/status#experimental)
 
 `yamlx` is a YAML parser for Go. It is a fork of [`yaml`](https://github.com/go-yaml/yaml) that adds some features
 to make it more useful for `go-faster` purposes, including better error reporting and performance.
@@ -28,11 +28,11 @@ supported since they're a poor design and are gone in YAML 1.2.
 
 ## Installation and usage
 
-The import path for the package is `github.com/go-faster/yamlx`.
+The import path for the package is `github.com/go-faster/yaml`.
 
 To install it, run:
 
-    go get github.com/go-faster/yamlx
+    go get github.com/go-faster/yaml
 
 ## API stability
 
@@ -48,7 +48,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/go-faster/yamlx"
+	"github.com/go-faster/yaml"
 )
 
 var data = `

@@ -31,7 +31,7 @@ import (
 
 	"github.com/go-faster/errors"
 
-	yaml "github.com/go-faster/yamlx"
+	"github.com/go-faster/yaml"
 )
 
 var unmarshalIntTest = 123
@@ -1469,7 +1469,7 @@ var unmarshalErrorTests = []struct {
 	// Invalid indentation (unexpected tab).
 	{"- >\n \t\n\tdetected\n", "yaml: line 3: found a tab character where an indentation space is expected"},
 
-	// https://github.com/go-faster/yamlx/issues/20
+	// https://github.com/go-faster/yaml/issues/20
 	{"0:\n00:\n 000\n<<:\n  {}:", `yaml: line 5: invalid map key: map\[string\]interface \{\}\{\}`},
 	{"0:\n00:\n 000\n<<:\n  []:", `yaml: line 5: invalid map key: \[\]interface \{\}\{\}`},
 	{"{}:", `yaml: line 1: invalid map key: map\[string\]interface \{\}\{\}`},
