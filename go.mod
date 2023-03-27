@@ -1,4 +1,4 @@
-module github.com/go-faster/yamlx
+module github.com/go-faster/yaml
 
 go 1.18
 
