@@ -567,7 +567,7 @@ type yaml_parser_t struct {
 	// Reader stuff
 
 	read_handler yaml_read_handler_t // Read handler.
-	read_error   error               // [yamlx] error returned by the input_reader.
+	read_error   error               // [yaml] error returned by the input_reader.
 
 	input_reader io.Reader // File input data.
 	input        []byte    // String input data.
@@ -702,7 +702,7 @@ type yaml_emitter_t struct {
 	// Writer stuff
 
 	write_handler yaml_write_handler_t // Write handler.
-	write_error   error                // [yamlx] error returned by the input_reader.
+	write_error   error                // [yaml] error returned by the input_reader.
 
 	output_buffer *[]byte   // String output data.
 	output_writer io.Writer // File output data.

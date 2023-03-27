@@ -1896,7 +1896,7 @@ func yaml_parser_scan_tag_directive_value(parser *yaml_parser_t, start_mark yaml
 //
 // # See https://yaml.org/spec/1.2.2/#rule-c-flow-indicator.
 //
-// [yamlx] This function is not appeared in the original libyaml code.
+// [yaml] This function is not appeared in the original libyaml code.
 func is_flow_indicator(b []byte, i int) bool {
 	switch b[i] {
 	case ',', '[', ']', '{', '}':
@@ -1908,7 +1908,7 @@ func is_flow_indicator(b []byte, i int) bool {
 
 // is_anchor_char checks if the given character is valid in an anchor name.
 //
-// [yamlx] This function is not appeared in the original libyaml code.
+// [yaml] This function is not appeared in the original libyaml code.
 func is_anchor_char(b []byte, i int) bool {
 	if is_blank(b, i) || is_flow_indicator(b, i) || is_spacez(b, i) {
 		return false
@@ -2511,7 +2511,7 @@ func yaml_parser_scan_flow_scalar(parser *yaml_parser_t, token *yaml_token_t, si
 
 		// Consume non-blank characters.
 		leading_blanks := false
-		// [yamlx] Flag for parsing surrogate pairs.
+		// [yaml] Flag for parsing surrogate pairs.
 		surrogate := false
 		first_surrogate := rune(0)
 		for !is_blankz(parser.buffer, parser.buffer_pos) {

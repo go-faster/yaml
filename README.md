@@ -1,6 +1,6 @@
-# yamlx [![](https://img.shields.io/badge/go-pkg-00ADD8)](https://pkg.go.dev/github.com/go-faster/yaml#section-documentation) [![](https://img.shields.io/codecov/c/github/go-faster/yamlx?label=cover)](https://codecov.io/gh/go-faster/yamlx) [![experimental](https://img.shields.io/badge/-experimental-blueviolet)](https://go-faster.org/docs/projects/status#experimental)
+# yaml [![](https://img.shields.io/badge/go-pkg-00ADD8)](https://pkg.go.dev/github.com/go-faster/yaml#section-documentation) [![](https://img.shields.io/codecov/c/github/go-faster/yaml?label=cover)](https://codecov.io/gh/go-faster/yaml) [![experimental](https://img.shields.io/badge/-experimental-blueviolet)](https://go-faster.org/docs/projects/status#experimental)
 
-`yamlx` is a YAML parser for Go. It is a fork of [`yaml`](https://github.com/go-yaml/yaml) that adds some features
+`yaml` is a YAML parser for Go. It is a fork of [`yaml`](https://github.com/go-yaml/yaml) that adds some features
 to make it more useful for `go-faster` purposes, including better error reporting and performance.
 
 ## Compatibility
