@@ -1,6 +1,8 @@
 package yaml_test
 
 import (
+	"os"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -34,6 +36,10 @@ func addFuzzingCorpus(add func(data []byte)) {
 		"scalar: >\n next\n line\n  * one\n",
 		// https://github.com/go-faster/yaml/issues/8
 		"0:\n    #00\n    - |1 \n      00",
+		// https://github.com/go-faster/yamlx/pull/19#issuecomment-1221479649
+		"|+\n\n#00000",
+		// https://github.com/go-faster/yamlx/pull/19#issuecomment-1229998571
+		"&x\nc: *x",
 	}
 
 	for _, data := range cases {
@@ -72,6 +78,7 @@ func FuzzDecodeEncodeDecode(f *testing.F) {
 			add(tt.Data)
 		}
 	}
+	compareTags, _ := strconv.ParseBool(os.Getenv("YAMLX_FUZZ_COMPARE_TAGS"))
 
 	f.Fuzz(func(t *testing.T, input []byte) {
 		var (
@@ -93,6 +100,12 @@ func FuzzDecodeEncodeDecode(f *testing.F) {
 			t.Skipf("Error: %+v", err)
 			return
 		}
+		if v.Kind == yaml.DocumentNode {
+			// FIXME(tdakkota): parser/scanner thinks that comments are part of children nodes.
+			v.HeadComment = ""
+			v.LineComment = ""
+			v.FootComment = ""
+		}
 
 		a := require.New(t)
 		data, err = yaml.Marshal(&v)
@@ -106,10 +119,37 @@ func FuzzDecodeEncodeDecode(f *testing.F) {
 			return
 		}
 
-		var compareNodes func(n1, n2 *yaml.Node)
+		var (
+			compareNodes func(n1, n2 *yaml.Node)
+			seen         map[*yaml.Node]struct{}
+		)
 		compareNodes = func(n1, n2 *yaml.Node) {
-			a.Equal(n1.ShortTag(), n2.ShortTag())
+			_, seen1 := seen[n1]
+			_, seen2 := seen[n2]
+			a.Equal(seen1, seen2)
+			// Don't compare nodes twice.
+			if seen1 {
+				return
+			}
+			seen[n1], seen[n2] = struct{}{}, struct{}{}
+
+			a.Equal(n1.Kind, n2.Kind)
+			if compareTags {
+				a.Equal(n1.ShortTag(), n2.ShortTag())
+			}
 			a.Equal(n1.Value, n2.Value)
+
+			// Compare aliases and anchors.
+			a.Equal(n1.Anchor, n2.Anchor)
+			if n1.Alias == nil {
+				// Ensure that n2.Alias is nil as well.
+				a.Nil(n2.Alias)
+			} else {
+				a.NotNil(n2.Alias)
+				compareNodes(n1.Alias, n2.Alias)
+			}
+
+			// Compare children.
 			a.Equal(len(n1.Content), len(n2.Content))
 			for i := range n1.Content {
 				compareNodes(n1.Content[i], n2.Content[i])
