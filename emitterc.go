@@ -420,7 +420,7 @@ func yaml_emitter_emit_document_start(emitter *yaml_emitter_t, event *yaml_event
 				if !yaml_emitter_write_tag_handle(emitter, tag_directive.handle) {
 					return false
 				}
-				if !yaml_emitter_write_tag_content(emitter, tag_directive.prefix, true) {
+				if !yaml_emitter_write_tag_content(emitter, tag_directive.prefix, true, true) {
 					return false
 				}
 				if !yaml_emitter_write_indent(emitter) {
@@ -1080,7 +1080,7 @@ func yaml_emitter_process_tag(emitter *yaml_emitter_t) bool {
 			return false
 		}
 		if len(emitter.tag_data.suffix) > 0 {
-			if !yaml_emitter_write_tag_content(emitter, emitter.tag_data.suffix, false) {
+			if !yaml_emitter_write_tag_content(emitter, emitter.tag_data.suffix, need_brackets, false) {
 				return false
 			}
 		}
@@ -1094,7 +1094,7 @@ func yaml_emitter_process_tag(emitter *yaml_emitter_t) bool {
 		if !yaml_emitter_write_indicator(emitter, []byte("!<"), true, false, false) {
 			return false
 		}
-		if !yaml_emitter_write_tag_content(emitter, emitter.tag_data.suffix, false) {
+		if !yaml_emitter_write_tag_content(emitter, emitter.tag_data.suffix, false, false) {
 			return false
 		}
 		if !yaml_emitter_write_indicator(emitter, []byte{'>'}, false, false, false) {
@@ -1562,7 +1562,7 @@ func yaml_emitter_write_tag_handle(emitter *yaml_emitter_t, value []byte) bool {
 	return true
 }
 
-func yaml_emitter_write_tag_content(emitter *yaml_emitter_t, value []byte, need_whitespace bool) bool {
+func yaml_emitter_write_tag_content(emitter *yaml_emitter_t, value []byte, allow_uri, need_whitespace bool) bool {
 	if need_whitespace && !emitter.whitespace {
 		if !put(emitter, ' ') {
 			return false
@@ -1571,8 +1571,10 @@ func yaml_emitter_write_tag_content(emitter *yaml_emitter_t, value []byte, need_
 	for i := 0; i < len(value); {
 		var must_write bool
 		switch value[i] {
-		case ';', '/', '?', ':', '@', '&', '=', '+', '$', ',', '_', '.', '~', '*', '\'', '(', ')', '[', ']':
+		case ';', '/', '?', ':', '@', '&', '=', '+', '$', '_', '.', '~', '*', '\'', '(', ')':
 			must_write = true
+		case '{', '}', '[', ']', ',':
+			must_write = allow_uri
 		default:
 			must_write = is_alpha(value, i)
 		}

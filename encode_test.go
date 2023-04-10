@@ -717,6 +717,21 @@ var marshalTests = []struct {
 		},
 		"!<!!>\n",
 	},
+	// https://github.com/go-faster/yaml/issues/50
+	{
+		yaml.Node{
+			Kind: yaml.ScalarNode,
+			Tag:  "[",
+		},
+		"!<%5B>\n",
+	},
+	{
+		yaml.Node{
+			Kind: yaml.ScalarNode,
+			Tag:  "]",
+		},
+		"!<%5D>\n",
+	},
 
 	// Enforced tagging with shorthand notation (issue #616).
 	{
