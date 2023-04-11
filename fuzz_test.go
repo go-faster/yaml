@@ -158,3 +158,70 @@ func FuzzDecodeEncodeDecode(f *testing.F) {
 		compareNodes(&v, &v2)
 	})
 }
+
+func FuzzTag(f *testing.F) {
+	for _, tag := range []string{
+		// Special characters.
+		"\x00",
+		"\x20", // Space
+		"\t",
+		"\r",
+		"\n",
+
+		// Invalid UTF-8.
+		"\xff",
+		"\xca",
+		"\xf0\x9f\xa4",
+
+		// Tag characters.
+		"!",
+		"!!",
+		"!<tag>",
+
+		// Comment characters.
+		"#",
+		"#\n#",
+
+		// Flow collection characters.
+		"[]",
+		"{}",
+		",",
+
+		// Just text.
+		"a",
+		"foo",
+
+		// Unicode.
+		"тег",
+		"🤷",
+
+		// Existing tags.
+		"str",
+		"tag:yaml.org,2002:str",
+	} {
+		f.Add(tag)
+	}
+
+	f.Fuzz(func(t *testing.T, tag string) {
+		n := &yaml.Node{
+			Kind:  yaml.ScalarNode,
+			Tag:   tag,
+			Value: "foo",
+		}
+
+		data, err := yaml.Marshal(n)
+		if err != nil {
+			require.ErrorContains(t, err, "invalid UTF-8 in tag")
+			return
+		}
+
+		var n2 *yaml.Node
+		require.NoError(t, yaml.Unmarshal(data, &n2))
+		if n2.Kind == yaml.DocumentNode {
+			n2 = n2.Content[0]
+		}
+
+		require.Equal(t, n.LongTag(), n2.LongTag())
+		require.Equal(t, n.Value, n2.Value)
+	})
+}
