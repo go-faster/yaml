@@ -25,6 +25,7 @@ package yaml
 import (
 	"bytes"
 	"fmt"
+	"unicode/utf8"
 )
 
 // Flush the buffer if needed.
@@ -1583,7 +1584,11 @@ func yaml_emitter_write_tag_content(emitter *yaml_emitter_t, value []byte, allow
 				return false
 			}
 		} else {
-			w := width(value[i])
+			r, w := utf8.DecodeRune(value[i:])
+			if r == utf8.RuneError {
+				yaml_emitter_set_emitter_error(emitter, fmt.Sprintf("invalid UTF-8 in tag %+q", value))
+				return false
+			}
 			for k := 0; k < w; k++ {
 				octet := value[i]
 				i++
