@@ -112,9 +112,7 @@ func (p *parser) fail() {
 		return
 	}
 
-	var (
-		line, column int
-	)
+	var line, column int
 	if p.parser.context_mark.line != 0 {
 		line = p.parser.context_mark.line
 		column = p.parser.context_mark.column
