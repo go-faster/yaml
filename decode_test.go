@@ -289,7 +289,6 @@ var unmarshalTests = []struct {
 		},
 	},
 	{
-
 		"- a?string\n- another ? string\n- key: value?\n- [a?string]\n- [another ? string]\n- {key: value? }\n- {key: value?}\n- {key?: value }\n",
 		[]any{
 			"a?string",
@@ -1265,7 +1264,7 @@ func TestDecoder(t *testing.T) {
 }
 
 func TestDecoderReadError(t *testing.T) {
-	var testError = errors.New("some read error")
+	testError := errors.New("some read error")
 	err := yaml.NewDecoder(iotest.ErrReader(testError)).Decode(&struct{}{})
 	require.ErrorIs(t, err, testError)
 }
@@ -1482,6 +1481,9 @@ var unmarshalErrorTests = []struct {
 	{"a: &, foo\n", "yaml: offset 4: did not find expected alphabetic or numeric character"},
 	{"a: foo\nb: *\n", "yaml: line 2:3: did not find expected alphabetic or numeric character"},
 	{"a: foo\nb: *,\n", "yaml: line 2:3: did not find expected alphabetic or numeric character"},
+
+	// Invalid tag UTF-8.
+	{"a: !%C0%80 bar", "yaml: offset 3: tag contains invalid UTF-8"},
 
 	// From https://github.com/go-yaml/yaml/pull/921.
 	{"a:\n- b: *,", `yaml: line 2:5: did not find expected alphabetic or numeric character`},

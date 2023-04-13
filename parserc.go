@@ -24,6 +24,7 @@ package yaml
 
 import (
 	"bytes"
+	"unicode/utf8"
 )
 
 // The parser implements the following grammar:
@@ -545,6 +546,14 @@ func yaml_parser_parse_node(parser *yaml_parser_t, event *yaml_event_t, block, i
 					"found undefined tag handle", tag_mark)
 				return false
 			}
+		}
+	}
+	if len(tag) > 0 {
+		if !utf8.Valid(tag) {
+			yaml_parser_set_parser_error_context(parser,
+				"while parsing a node", start_mark,
+				"tag contains invalid UTF-8", tag_mark)
+			return false
 		}
 	}
 
