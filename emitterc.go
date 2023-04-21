@@ -833,6 +833,7 @@ func yaml_emitter_emit_block_mapping_value(emitter *yaml_emitter_t, event *yaml_
 				return false
 			}
 			emitter.line_comment, emitter.key_line_comment = emitter.key_line_comment, emitter.line_comment
+			emitter.whitespace = false
 		}
 	}
 	emitter.states = append(emitter.states, yaml_EMIT_BLOCK_MAPPING_KEY_STATE)
