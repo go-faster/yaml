@@ -677,7 +677,9 @@ func yaml_emitter_emit_flow_mapping_key(emitter *yaml_emitter_t, event *yaml_eve
 		}
 	}
 
-	if !emitter.canonical && yaml_emitter_check_simple_key(emitter) {
+	if !emitter.canonical &&
+		!yaml_emitter_check_empty_flow(emitter) &&
+		yaml_emitter_check_simple_key(emitter) {
 		emitter.states = append(emitter.states, yaml_EMIT_FLOW_MAPPING_SIMPLE_VALUE_STATE)
 		return yaml_emitter_emit_node(emitter, event, false, false, true, true)
 	}
@@ -966,6 +968,30 @@ func yaml_emitter_check_empty_mapping(emitter *yaml_emitter_t) bool {
 	}
 	return emitter.events[emitter.events_head].typ == yaml_MAPPING_START_EVENT &&
 		emitter.events[emitter.events_head+1].typ == yaml_MAPPING_END_EVENT
+}
+
+// Check if the next events represent an empty flow sequence/mapping.
+func yaml_emitter_check_empty_flow(emitter *yaml_emitter_t) bool {
+	if len(emitter.events)-emitter.events_head < 2 {
+		return false
+	}
+
+	start := emitter.events[emitter.events_head]
+	switch start.typ {
+	case yaml_SEQUENCE_START_EVENT, yaml_MAPPING_START_EVENT:
+	default:
+		return false
+	}
+
+	end := emitter.events[emitter.events_head+1]
+	switch end.typ {
+	case yaml_SEQUENCE_END_EVENT, yaml_MAPPING_END_EVENT:
+	default:
+		return false
+	}
+
+	return start.style == yaml_style_t(yaml_FLOW_SEQUENCE_STYLE) ||
+		start.style == yaml_style_t(yaml_FLOW_MAPPING_STYLE)
 }
 
 // Check if the next node can be expressed as a simple key.
