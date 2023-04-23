@@ -1485,6 +1485,15 @@ var unmarshalErrorTests = []struct {
 	// Invalid tag UTF-8.
 	{"a: !%C0%80 bar", "yaml: offset 3: tag contains invalid UTF-8"},
 
+	// For some mysterious reason, YAML require a space after mapping flow end and before comment.
+	//
+	// See https://yaml.org/spec/1.2.2/#rule-s-b-comment
+	//
+	// The `s-separate-in-line` rule.
+	{"{{}#\n}0", "yaml: offset 3: missing space before comment"},
+	{"{}#", "yaml: offset 2: missing space before comment"},
+	{"[]#", "yaml: offset 2: missing space before comment"},
+
 	// From https://github.com/go-yaml/yaml/pull/921.
 	{"a:\n- b: *,", `yaml: line 2:5: did not find expected alphabetic or numeric character`},
 	{"a:\n- b: *a{", `yaml: line 2:5: did not find expected alphabetic or numeric character`},

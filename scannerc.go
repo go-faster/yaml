@@ -748,6 +748,7 @@ func yaml_parser_fetch_next_token(parser *yaml_parser_t) (ok bool) {
 		// Associate any following comments with the prior token.
 		comment_mark = parser.tokens[len(parser.tokens)-1].start_mark
 	}
+	var need_before_comment_space bool
 	defer func() {
 		if !ok {
 			return
@@ -757,7 +758,7 @@ func yaml_parser_fetch_next_token(parser *yaml_parser_t) (ok bool) {
 			// a head comment for whatever follows.
 			return
 		}
-		if !yaml_parser_scan_line_comment(parser, comment_mark) {
+		if !yaml_parser_scan_line_comment(parser, comment_mark, need_before_comment_space) {
 			ok = false
 			return
 		}
@@ -775,12 +776,14 @@ func yaml_parser_fetch_next_token(parser *yaml_parser_t) (ok bool) {
 
 	// Is it the flow sequence end indicator?
 	if parser.buffer[parser.buffer_pos] == ']' {
+		need_before_comment_space = true
 		return yaml_parser_fetch_flow_collection_end(parser,
 			yaml_FLOW_SEQUENCE_END_TOKEN)
 	}
 
 	// Is it the flow mapping end indicator?
 	if parser.buffer[parser.buffer_pos] == '}' {
+		need_before_comment_space = true
 		return yaml_parser_fetch_flow_collection_end(parser,
 			yaml_FLOW_MAPPING_END_TOKEN)
 	}
@@ -2289,7 +2292,7 @@ func yaml_parser_scan_block_scalar(parser *yaml_parser_t, token *yaml_token_t, l
 		}
 	}
 	if parser.buffer[parser.buffer_pos] == '#' {
-		if !yaml_parser_scan_line_comment(parser, start_mark) {
+		if !yaml_parser_scan_line_comment(parser, start_mark, false) {
 			return false
 		}
 		for !is_breakz(parser.buffer, parser.buffer_pos) {
@@ -2886,22 +2889,30 @@ func yaml_parser_scan_plain_scalar(parser *yaml_parser_t, token *yaml_token_t) b
 	return true
 }
 
-func yaml_parser_scan_line_comment(parser *yaml_parser_t, token_mark yaml_mark_t) bool {
+func yaml_parser_scan_line_comment(parser *yaml_parser_t, token_mark yaml_mark_t, need_space_before_comment bool) bool {
 	if parser.newlines > 0 {
 		return true
 	}
 
-	var start_mark yaml_mark_t
-	var text []byte
+	var (
+		text             []byte
+		start_mark       yaml_mark_t
+		has_space_before bool
+	)
 
 	for peek := 0; peek < 512; peek++ {
 		if parser.unread < peek+1 && !yaml_parser_update_buffer(parser, peek+1) {
 			break
 		}
 		if is_blank(parser.buffer, parser.buffer_pos+peek) {
+			has_space_before = true
 			continue
 		}
 		if parser.buffer[parser.buffer_pos+peek] == '#' {
+			if need_space_before_comment && !has_space_before {
+				yaml_parser_set_scanner_error(parser, "while scanning a comment", token_mark, "missing space before comment")
+				return false
+			}
 			seen := parser.mark.index + peek
 			for {
 				if parser.unread < 1 && !yaml_parser_update_buffer(parser, 1) {
