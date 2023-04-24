@@ -1000,6 +1000,7 @@ func yaml_emitter_check_simple_key(emitter *yaml_emitter_t) bool {
 	switch emitter.events[emitter.events_head].typ {
 	case yaml_ALIAS_EVENT:
 		length += len(emitter.anchor_data.anchor)
+		return false
 	case yaml_SCALAR_EVENT:
 		if emitter.scalar_data.multiline {
 			return false
