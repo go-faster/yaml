@@ -730,11 +730,6 @@ func yaml_emitter_emit_flow_mapping_value(emitter *yaml_emitter_t, event *yaml_e
 
 // Expect a block item node.
 func yaml_emitter_emit_block_sequence_item(emitter *yaml_emitter_t, event *yaml_event_t, first bool) bool {
-	if first {
-		if !yaml_emitter_increase_indent(emitter, false, false) {
-			return false
-		}
-	}
 	if event.typ == yaml_SEQUENCE_END_EVENT {
 		emitter.indent = emitter.indents[len(emitter.indents)-1]
 		emitter.indents = emitter.indents[:len(emitter.indents)-1]
@@ -766,11 +761,6 @@ func yaml_emitter_emit_block_sequence_item(emitter *yaml_emitter_t, event *yaml_
 
 // Expect a block key node.
 func yaml_emitter_emit_block_mapping_key(emitter *yaml_emitter_t, event *yaml_event_t, first bool) bool {
-	if first {
-		if !yaml_emitter_increase_indent(emitter, false, false) {
-			return false
-		}
-	}
 	if !yaml_emitter_process_head_comment(emitter) {
 		return false
 	}
@@ -915,16 +905,28 @@ func yaml_emitter_emit_scalar(emitter *yaml_emitter_t, event *yaml_event_t) bool
 
 // Expect SEQUENCE-START.
 func yaml_emitter_emit_sequence_start(emitter *yaml_emitter_t, event *yaml_event_t) bool {
-	if !yaml_emitter_process_anchor(emitter) {
-		return false
-	}
-	if !yaml_emitter_process_tag(emitter) {
-		return false
-	}
 	if emitter.flow_level > 0 || emitter.canonical || event.sequence_style() == yaml_FLOW_SEQUENCE_STYLE ||
 		yaml_emitter_check_empty_sequence(emitter) {
+		if !yaml_emitter_process_anchor(emitter) {
+			return false
+		}
+		if !yaml_emitter_process_tag(emitter) {
+			return false
+		}
 		emitter.state = yaml_EMIT_FLOW_SEQUENCE_FIRST_ITEM_STATE
 	} else {
+		if !yaml_emitter_increase_indent(emitter, false, false) {
+			return false
+		}
+		if !yaml_emitter_write_indent(emitter) {
+			return false
+		}
+		if !yaml_emitter_process_anchor(emitter) {
+			return false
+		}
+		if !yaml_emitter_process_tag(emitter) {
+			return false
+		}
 		emitter.state = yaml_EMIT_BLOCK_SEQUENCE_FIRST_ITEM_STATE
 	}
 	return true
@@ -932,16 +934,38 @@ func yaml_emitter_emit_sequence_start(emitter *yaml_emitter_t, event *yaml_event
 
 // Expect MAPPING-START.
 func yaml_emitter_emit_mapping_start(emitter *yaml_emitter_t, event *yaml_event_t) bool {
-	if !yaml_emitter_process_anchor(emitter) {
-		return false
-	}
-	if !yaml_emitter_process_tag(emitter) {
-		return false
-	}
 	if emitter.flow_level > 0 || emitter.canonical || event.mapping_style() == yaml_FLOW_MAPPING_STYLE ||
 		yaml_emitter_check_empty_mapping(emitter) {
+		if !yaml_emitter_process_anchor(emitter) {
+			return false
+		}
+		if !yaml_emitter_process_tag(emitter) {
+			return false
+		}
 		emitter.state = yaml_EMIT_FLOW_MAPPING_FIRST_KEY_STATE
 	} else {
+		// FIXME(tdakkota): should we do it for flow style?
+		//
+		// Write same indent as mapping have.
+		// In cases like this:
+		//
+		// 	a:
+		// 	 b: # comment
+		// 	  !tag
+		// 	  c:
+		//
+		if !yaml_emitter_increase_indent(emitter, false, false) {
+			return false
+		}
+		if !yaml_emitter_write_indent(emitter) {
+			return false
+		}
+		if !yaml_emitter_process_anchor(emitter) {
+			return false
+		}
+		if !yaml_emitter_process_tag(emitter) {
+			return false
+		}
 		emitter.state = yaml_EMIT_BLOCK_MAPPING_FIRST_KEY_STATE
 	}
 	return true
