@@ -1,6 +1,9 @@
 linters-settings:
   govet:
     check-shadowing: true
+  gosec:
+    excludes:
+      - G115 # Annoying and have a lot of false-positive results.
   gocyclo:
     min-complexity: 15
   maligned:
@@ -24,6 +27,8 @@ linters-settings:
       - performance
       - style
     disabled-checks:
+      # Original code is fine.
+      - emptyStringTest
       # https://github.com/go-critic/go-critic/issues/1245
       - typeUnparen
 
@@ -42,8 +47,6 @@ linters-settings:
 linters:
   disable-all: true
   enable:
-    - deadcode
-    - depguard
     - dogsled
     - errcheck
     - goconst
@@ -56,11 +59,9 @@ linters:
     - ineffassign
     - misspell
     - nakedret
-    - structcheck
     - typecheck
     - unconvert
     - unparam
-    - varcheck
     - whitespace
     # Disable until https://github.com/dominikh/go-tools/issues/1270 fix be released.
     # - staticcheck
