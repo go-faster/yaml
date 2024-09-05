@@ -60,8 +60,8 @@ func is_digit(b []byte, i int) bool {
 }
 
 // Get the value of a digit.
-func as_digit(b []byte, i int) int {
-	return int(b[i]) - '0'
+func as_digit(b []byte, i int) uint8 {
+	return b[i] - '0'
 }
 
 // Check if the character at the specified position is a hex-digit.

@@ -920,7 +920,6 @@ func yaml_parser_save_simple_key(parser *yaml_parser_t) bool {
 	// level.
 
 	required := parser.flow_level == 0 && parser.indent == parser.mark.column
-
 	//
 	// If the current position may start a simple key, save it.
 	//
@@ -2253,7 +2252,7 @@ func yaml_parser_scan_block_scalar(parser *yaml_parser_t, token *yaml_token_t, l
 			}
 
 			// Get the indentation level and eat the indicator.
-			increment = as_digit(parser.buffer, parser.buffer_pos)
+			increment = int(as_digit(parser.buffer, parser.buffer_pos))
 			skip(parser)
 		}
 
@@ -2265,7 +2264,7 @@ func yaml_parser_scan_block_scalar(parser *yaml_parser_t, token *yaml_token_t, l
 				start_mark, "found an indentation indicator equal to 0")
 			return false
 		}
-		increment = as_digit(parser.buffer, parser.buffer_pos)
+		increment = int(as_digit(parser.buffer, parser.buffer_pos))
 		skip(parser)
 
 		if parser.unread < 1 && !yaml_parser_update_buffer(parser, 1) {

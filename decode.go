@@ -859,7 +859,7 @@ func (d *decoder) mapping(n *Node, out reflect.Value) (good bool) {
 		if d.unmarshal(n.Content[i], k) {
 			if !isHashable(k) {
 				failWantHashable(n.Content[i], k)
-				return
+				return false
 			}
 			if mergedFields != nil {
 				ki := k.Interface()

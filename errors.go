@@ -22,7 +22,16 @@ type SyntaxError struct {
 	Msg    string
 }
 
-func syntaxErr(offset, line, column int, msgf string, args ...any) error {
+func syntaxErr(offset, line, column int, msg string) error {
+	return &SyntaxError{
+		Offset: offset,
+		Line:   line,
+		Column: column,
+		Msg:    msg,
+	}
+}
+
+func syntaxErrf(offset, line, column int, msgf string, args ...any) error {
 	return &SyntaxError{
 		Offset: offset,
 		Line:   line,
