@@ -450,6 +450,10 @@ func (d *decoder) prepare(n *Node, out reflect.Value) (newout reflect.Value, unm
 			out = out.Elem()
 			again = true
 		}
+		if out.Kind() == reflect.Map && out.IsNil() {
+			out.Set(reflect.MakeMap(out.Type()))
+			again = true
+		}
 		if out.CanAddr() {
 			outi := out.Addr().Interface()
 			if u, ok := outi.(Unmarshaler); ok {

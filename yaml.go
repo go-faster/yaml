@@ -120,23 +120,24 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 		}
 
 		if inline {
-			switch field.Type.Kind() {
+			ftype := field.Type
+			for ftype.Kind() == reflect.Ptr {
+				ftype = ftype.Elem()
+			}
+			switch ftype.Kind() {
 			case reflect.Map:
+				if reflect.PtrTo(ftype).Implements(unmarshalerType) {
+					inlineUnmarshalers = append(inlineUnmarshalers, []int{i})
+					break
+				}
 				if inlineMap >= 0 {
 					return nil, errors.New("multiple ,inline maps in struct " + st.String())
 				}
-				if field.Type.Key() != reflect.TypeOf("") {
+				if ftype.Key() != reflect.TypeOf("") {
 					return nil, errors.New("option ,inline needs a map with string keys in struct " + st.String())
 				}
 				inlineMap = info.Num
-			case reflect.Struct, reflect.Ptr:
-				ftype := field.Type
-				for ftype.Kind() == reflect.Ptr {
-					ftype = ftype.Elem()
-				}
-				if ftype.Kind() != reflect.Struct {
-					return nil, errors.New("option ,inline may only be used on a struct or map field")
-				}
+			case reflect.Struct:
 				if reflect.PtrTo(ftype).Implements(unmarshalerType) {
 					inlineUnmarshalers = append(inlineUnmarshalers, []int{i})
 				} else {
