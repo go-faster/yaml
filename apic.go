@@ -54,11 +54,6 @@ func yaml_parser_initialize(parser *yaml_parser_t) bool {
 	return true
 }
 
-// Destroy a parser object.
-func yaml_parser_delete(parser *yaml_parser_t) {
-	*parser = yaml_parser_t{}
-}
-
 // String read handler.
 func yaml_string_read_handler(parser *yaml_parser_t, buffer []byte) (n int, err error) {
 	if parser.input_pos == len(parser.input) {
@@ -93,14 +88,6 @@ func yaml_parser_set_input_reader(parser *yaml_parser_t, r io.Reader) {
 	parser.input_reader = r
 }
 
-// Set the source encoding.
-func yaml_parser_set_encoding(parser *yaml_parser_t, encoding yaml_encoding_t) {
-	if parser.encoding != yaml_ANY_ENCODING {
-		panic("must set the encoding only once")
-	}
-	parser.encoding = encoding
-}
-
 // Create a new emitter object.
 func yaml_emitter_initialize(emitter *yaml_emitter_t) {
 	*emitter = yaml_emitter_t{
@@ -109,11 +96,6 @@ func yaml_emitter_initialize(emitter *yaml_emitter_t) {
 		events:     make([]yaml_event_t, 0, initial_queue_size),
 		best_width: -1,
 	}
-}
-
-// Destroy an emitter object.
-func yaml_emitter_delete(emitter *yaml_emitter_t) {
-	*emitter = yaml_emitter_t{}
 }
 
 // String write handler.
@@ -147,43 +129,9 @@ func yaml_emitter_set_output_writer(emitter *yaml_emitter_t, w io.Writer) {
 	emitter.output_writer = w
 }
 
-// Set the output encoding.
-func yaml_emitter_set_encoding(emitter *yaml_emitter_t, encoding yaml_encoding_t) {
-	if emitter.encoding != yaml_ANY_ENCODING {
-		panic("must set the output encoding only once")
-	}
-	emitter.encoding = encoding
-}
-
-// Set the canonical output style.
-func yaml_emitter_set_canonical(emitter *yaml_emitter_t, canonical bool) {
-	emitter.canonical = canonical
-}
-
-// Set the indentation increment.
-func yaml_emitter_set_indent(emitter *yaml_emitter_t, indent int) {
-	if indent < 2 || indent > 9 {
-		indent = 2
-	}
-	emitter.best_indent = indent
-}
-
-// Set the preferred line width.
-func yaml_emitter_set_width(emitter *yaml_emitter_t, width int) {
-	if width < 0 {
-		width = -1
-	}
-	emitter.best_width = width
-}
-
 // Set if unescaped non-ASCII characters are allowed.
 func yaml_emitter_set_unicode(emitter *yaml_emitter_t, unicode bool) {
 	emitter.unicode = unicode
-}
-
-// Set the preferred line break character.
-func yaml_emitter_set_break(emitter *yaml_emitter_t, line_break yaml_break_t) {
-	emitter.line_break = line_break
 }
 
 ///*

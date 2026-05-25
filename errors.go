@@ -31,15 +31,6 @@ func syntaxErr(offset, line, column int, msg string) error {
 	}
 }
 
-func syntaxErrf(offset, line, column int, msgf string, args ...any) error {
-	return &SyntaxError{
-		Offset: offset,
-		Line:   line,
-		Column: column,
-		Msg:    fmt.Sprintf(msgf, args...),
-	}
-}
-
 // Error returns the error message.
 func (s *SyntaxError) Error() string {
 	if s.Line == 0 {
