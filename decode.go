@@ -439,7 +439,7 @@ func (d *decoder) prepare(n *Node, out reflect.Value) (newout reflect.Value, unm
 	again := true
 	for again {
 		again = false
-		if out.Kind() == reflect.Ptr {
+		if out.Kind() == reflect.Pointer {
 			if isNull {
 				// If the value is a null, don't initialize it.
 				return out, false, false
