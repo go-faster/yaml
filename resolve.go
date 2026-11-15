@@ -59,7 +59,7 @@ func init() {
 		{math.Inf(+1), floatTag, []string{".inf", ".Inf", ".INF"}},
 		{math.Inf(+1), floatTag, []string{"+.inf", "+.Inf", "+.INF"}},
 		{math.Inf(-1), floatTag, []string{"-.inf", "-.Inf", "-.INF"}},
-		{"<<", mergeTag, []string{"<<"}},
+		{mergeKey, mergeTag, []string{mergeKey}},
 	}
 
 	m := resolveMap
@@ -82,6 +82,9 @@ const (
 	binaryTag    = "!!binary"
 	mergeTag     = "!!merge"
 )
+
+// mergeKey is the merge key, see https://yaml.org/type/merge.html.
+const mergeKey = "<<"
 
 var (
 	longTags  = make(map[string]string)
@@ -162,6 +165,7 @@ func resolve(tag, in string) (rtag string, out any) {
 				}
 			}
 		}
+		//nolint:gocritic // sprintfQuotedString: %#q falls back to double quotes, keep the message stable.
 		fail(&MarshalError{Msg: fmt.Sprintf("cannot decode %s `%s` as a %s", shortTag(rtag), in, shortTag(tag))})
 	}()
 

@@ -112,7 +112,7 @@ func (e *encoder) marshal(tag string, in reflect.Value) {
 	if in.Kind() == reflect.Interface {
 		in = in.Elem()
 	}
-	if !in.IsValid() || in.Kind() == reflect.Ptr && in.IsNil() {
+	if !in.IsValid() || in.Kind() == reflect.Pointer && in.IsNil() {
 		e.nilv()
 		return
 	}
@@ -162,7 +162,7 @@ func (e *encoder) marshal(tag string, in reflect.Value) {
 	switch in.Kind() {
 	case reflect.Map:
 		e.mapv(tag, in)
-	case reflect.Ptr:
+	case reflect.Pointer:
 		e.marshal(tag, in.Elem())
 	case reflect.Struct:
 		e.structv(tag, in)
@@ -197,7 +197,7 @@ func (e *encoder) mapv(tag string, in reflect.Value) {
 func (e *encoder) fieldByIndex(v reflect.Value, index []int) (field reflect.Value) {
 	for _, num := range index {
 		for {
-			if v.Kind() == reflect.Ptr {
+			if v.Kind() == reflect.Pointer {
 				if v.IsNil() {
 					return reflect.Value{}
 				}
@@ -367,12 +367,7 @@ func (e *encoder) stringv(tag string, in reflect.Value) {
 }
 
 func (e *encoder) boolv(tag string, in reflect.Value) {
-	var s string
-	if in.Bool() {
-		s = "true"
-	} else {
-		s = "false"
-	}
+	s := strconv.FormatBool(in.Bool())
 	e.emitScalar(s, "", tag, yaml_PLAIN_SCALAR_STYLE, nil, nil, nil, nil)
 }
 

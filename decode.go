@@ -253,7 +253,7 @@ func (p *parser) scalar() *Node {
 	nodeTag := string(p.event.tag)
 	var defaultTag string
 	if nodeStyle == 0 {
-		if nodeValue == "<<" {
+		if nodeValue == mergeKey {
 			defaultTag = mergeTag
 		}
 	} else {
@@ -439,7 +439,7 @@ func (d *decoder) prepare(n *Node, out reflect.Value) (newout reflect.Value, unm
 	again := true
 	for again {
 		again = false
-		if out.Kind() == reflect.Ptr {
+		if out.Kind() == reflect.Pointer {
 			if isNull {
 				// If the value is a null, don't initialize it.
 				return out, false, false
@@ -471,7 +471,7 @@ func (d *decoder) fieldByIndex(n *Node, v reflect.Value, index []int) (field ref
 	}
 	for _, num := range index {
 		for {
-			if v.Kind() == reflect.Ptr {
+			if v.Kind() == reflect.Pointer {
 				if v.IsNil() {
 					v.Set(reflect.New(v.Type().Elem()))
 				}
@@ -577,7 +577,7 @@ func (d *decoder) alias(n *Node, out reflect.Value) (good bool) {
 func (d *decoder) null(out reflect.Value) bool {
 	if out.CanAddr() {
 		switch out.Kind() {
-		case reflect.Interface, reflect.Ptr, reflect.Map, reflect.Slice:
+		case reflect.Interface, reflect.Pointer, reflect.Map, reflect.Slice:
 			out.Set(reflect.Zero(out.Type()))
 			return true
 		}
@@ -596,7 +596,11 @@ func (d *decoder) scalar(n *Node, out reflect.Value) bool {
 		if tag == binaryTag {
 			data, err := base64.StdEncoding.DecodeString(resolved.(string))
 			if err != nil {
-				fail(unmarshalErrf(n, out.Type(), "decode !!binary: %w", err))
+				fail(&UnmarshalError{
+					Node: n,
+					Type: out.Type(),
+					Err:  errors.Wrap(err, "decode !!binary"),
+				})
 			}
 			resolved = string(data)
 		}
@@ -735,7 +739,7 @@ func (d *decoder) scalar(n *Node, out reflect.Value) bool {
 			out.Set(resolvedv)
 			return true
 		}
-	case reflect.Ptr:
+	case reflect.Pointer:
 		panic("yaml internal error: please report the issue")
 	}
 	d.terror(n, tag, out)
@@ -1027,5 +1031,5 @@ func (d *decoder) merge(parent, merge *Node, out reflect.Value) {
 }
 
 func isMerge(n *Node) bool {
-	return n.Kind == ScalarNode && n.Value == "<<" && (n.Tag == "" || n.Tag == "!" || shortTag(n.Tag) == mergeTag)
+	return n.Kind == ScalarNode && n.Value == mergeKey && (n.Tag == "" || n.Tag == "!" || shortTag(n.Tag) == mergeTag)
 }

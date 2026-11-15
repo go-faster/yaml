@@ -90,7 +90,7 @@ func (dec *Decoder) Decode(v any) (err error) {
 		return io.EOF
 	}
 	out := reflect.ValueOf(v)
-	if out.Kind() == reflect.Ptr && !out.IsNil() {
+	if out.Kind() == reflect.Pointer && !out.IsNil() {
 		out = out.Elem()
 	}
 	d.unmarshal(node, out)
@@ -110,7 +110,7 @@ func (n *Node) Decode(v any) (err error) {
 	d := newDecoder()
 	defer handleErr(&err)
 	out := reflect.ValueOf(v)
-	if out.Kind() == reflect.Ptr && !out.IsNil() {
+	if out.Kind() == reflect.Pointer && !out.IsNil() {
 		out = out.Elem()
 	}
 	d.unmarshal(n, out)
@@ -130,7 +130,7 @@ func unmarshal(in []byte, out any) (err error) {
 	node := p.parse()
 	if node != nil {
 		v := reflect.ValueOf(out)
-		if v.Kind() == reflect.Ptr && !v.IsNil() {
+		if v.Kind() == reflect.Pointer && !v.IsNil() {
 			v = v.Elem()
 		}
 		d.unmarshal(node, v)

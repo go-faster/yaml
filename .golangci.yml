@@ -104,7 +104,7 @@ linters:
       - linters:
           - gocritic
         path: emitterc\.go
-        text: (elseIf|ifElseChain)
+        text: (elseIf|elseif|ifElseChain)
       - linters:
           - gocritic
           - govet
@@ -113,7 +113,7 @@ linters:
       - linters:
           - gocritic
         path: scannerc\.go
-        text: (elseIf|ifElseChain|boolExprSimplify|commentFormatting|appendCombine)
+        text: (elseIf|elseif|ifElseChain|boolExprSimplify|commentFormatting|appendCombine)
       - linters:
           - gocritic
         path: readerc\.go

@@ -129,15 +129,15 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 					return nil, errors.New("option ,inline needs a map with string keys in struct " + st.String())
 				}
 				inlineMap = info.Num
-			case reflect.Struct, reflect.Ptr:
+			case reflect.Struct, reflect.Pointer:
 				ftype := field.Type
-				for ftype.Kind() == reflect.Ptr {
+				for ftype.Kind() == reflect.Pointer {
 					ftype = ftype.Elem()
 				}
 				if ftype.Kind() != reflect.Struct {
 					return nil, errors.New("option ,inline may only be used on a struct or map field")
 				}
-				if reflect.PtrTo(ftype).Implements(unmarshalerType) {
+				if reflect.PointerTo(ftype).Implements(unmarshalerType) {
 					inlineUnmarshalers = append(inlineUnmarshalers, []int{i})
 				} else {
 					si, err := getStructInfo(ftype)
