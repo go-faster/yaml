@@ -13,7 +13,7 @@ type IsZeroer interface {
 func isZero(v reflect.Value) bool {
 	kind := v.Kind()
 	if z, ok := v.Interface().(IsZeroer); ok {
-		if (kind == reflect.Ptr || kind == reflect.Interface) && v.IsNil() {
+		if (kind == reflect.Pointer || kind == reflect.Interface) && v.IsNil() {
 			return true
 		}
 		return z.IsZero()
