@@ -4,7 +4,7 @@ import (
 	"io"
 	"reflect"
 
-	"go.uber.org/multierr"
+	"github.com/go-faster/errors"
 )
 
 // The Unmarshaler interface may be implemented by types to customize their
@@ -96,7 +96,7 @@ func (dec *Decoder) Decode(v any) (err error) {
 	d.unmarshal(node, out)
 	if len(d.terrors) > 0 {
 		return &TypeError{
-			Group: multierr.Combine(d.terrors...),
+			Group: errors.Join(d.terrors...),
 		}
 	}
 	return nil
@@ -116,7 +116,7 @@ func (n *Node) Decode(v any) (err error) {
 	d.unmarshal(n, out)
 	if len(d.terrors) > 0 {
 		return &TypeError{
-			Group: multierr.Combine(d.terrors...),
+			Group: errors.Join(d.terrors...),
 		}
 	}
 	return nil
@@ -137,7 +137,7 @@ func unmarshal(in []byte, out any) (err error) {
 	}
 	if len(d.terrors) > 0 {
 		return &TypeError{
-			Group: multierr.Combine(d.terrors...),
+			Group: errors.Join(d.terrors...),
 		}
 	}
 	return nil

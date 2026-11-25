@@ -182,13 +182,10 @@ func yaml_emitter_need_more_events(emitter *yaml_emitter_t) bool {
 	switch emitter.events[emitter.events_head].typ {
 	case yaml_DOCUMENT_START_EVENT:
 		accumulate = 1
-		break
 	case yaml_SEQUENCE_START_EVENT:
 		accumulate = 2
-		break
 	case yaml_MAPPING_START_EVENT:
 		accumulate = 3
-		break
 	default:
 		return false
 	}
@@ -293,16 +290,16 @@ func yaml_emitter_state_machine(emitter *yaml_emitter_t, event *yaml_event_t) bo
 		return yaml_emitter_emit_flow_mapping_value(emitter, event, false)
 
 	case yaml_EMIT_BLOCK_SEQUENCE_FIRST_ITEM_STATE:
-		return yaml_emitter_emit_block_sequence_item(emitter, event, true)
+		return yaml_emitter_emit_block_sequence_item(emitter, event)
 
 	case yaml_EMIT_BLOCK_SEQUENCE_ITEM_STATE:
-		return yaml_emitter_emit_block_sequence_item(emitter, event, false)
+		return yaml_emitter_emit_block_sequence_item(emitter, event)
 
 	case yaml_EMIT_BLOCK_MAPPING_FIRST_KEY_STATE:
-		return yaml_emitter_emit_block_mapping_key(emitter, event, true)
+		return yaml_emitter_emit_block_mapping_key(emitter, event)
 
 	case yaml_EMIT_BLOCK_MAPPING_KEY_STATE:
-		return yaml_emitter_emit_block_mapping_key(emitter, event, false)
+		return yaml_emitter_emit_block_mapping_key(emitter, event)
 
 	case yaml_EMIT_BLOCK_MAPPING_SIMPLE_VALUE_STATE:
 		return yaml_emitter_emit_block_mapping_value(emitter, event, true)
@@ -430,7 +427,7 @@ func yaml_emitter_emit_document_start(emitter *yaml_emitter_t, event *yaml_event
 			}
 		}
 
-		if yaml_emitter_check_empty_document(emitter) {
+		if yaml_emitter_check_empty_document() {
 			implicit = false
 		}
 		if !implicit {
@@ -729,7 +726,7 @@ func yaml_emitter_emit_flow_mapping_value(emitter *yaml_emitter_t, event *yaml_e
 }
 
 // Expect a block item node.
-func yaml_emitter_emit_block_sequence_item(emitter *yaml_emitter_t, event *yaml_event_t, first bool) bool {
+func yaml_emitter_emit_block_sequence_item(emitter *yaml_emitter_t, event *yaml_event_t) bool {
 	if event.typ == yaml_SEQUENCE_END_EVENT {
 		emitter.indent = emitter.indents[len(emitter.indents)-1]
 		emitter.indents = emitter.indents[:len(emitter.indents)-1]
@@ -760,7 +757,7 @@ func yaml_emitter_emit_block_sequence_item(emitter *yaml_emitter_t, event *yaml_
 }
 
 // Expect a block key node.
-func yaml_emitter_emit_block_mapping_key(emitter *yaml_emitter_t, event *yaml_event_t, first bool) bool {
+func yaml_emitter_emit_block_mapping_key(emitter *yaml_emitter_t, event *yaml_event_t) bool {
 	if !yaml_emitter_process_head_comment(emitter) {
 		return false
 	}
@@ -841,10 +838,6 @@ func yaml_emitter_emit_block_mapping_value(emitter *yaml_emitter_t, event *yaml_
 	return true
 }
 
-func yaml_emitter_silent_nil_event(emitter *yaml_emitter_t, event *yaml_event_t) bool {
-	return event.typ == yaml_SCALAR_EVENT && event.implicit && !emitter.canonical && len(emitter.scalar_data.value) == 0
-}
-
 // Expect a node.
 func yaml_emitter_emit_node(emitter *yaml_emitter_t, event *yaml_event_t,
 	root bool, sequence bool, mapping bool, simple_key bool,
@@ -856,7 +849,7 @@ func yaml_emitter_emit_node(emitter *yaml_emitter_t, event *yaml_event_t,
 
 	switch event.typ {
 	case yaml_ALIAS_EVENT:
-		return yaml_emitter_emit_alias(emitter, event)
+		return yaml_emitter_emit_alias(emitter)
 	case yaml_SCALAR_EVENT:
 		return yaml_emitter_emit_scalar(emitter, event)
 	case yaml_SEQUENCE_START_EVENT:
@@ -870,7 +863,7 @@ func yaml_emitter_emit_node(emitter *yaml_emitter_t, event *yaml_event_t,
 }
 
 // Expect ALIAS.
-func yaml_emitter_emit_alias(emitter *yaml_emitter_t, event *yaml_event_t) bool {
+func yaml_emitter_emit_alias(emitter *yaml_emitter_t) bool {
 	if !yaml_emitter_process_anchor(emitter) {
 		return false
 	}
@@ -972,7 +965,7 @@ func yaml_emitter_emit_mapping_start(emitter *yaml_emitter_t, event *yaml_event_
 }
 
 // Check if the document content is an empty scalar.
-func yaml_emitter_check_empty_document(emitter *yaml_emitter_t) bool {
+func yaml_emitter_check_empty_document() bool {
 	return false // [Go] Huh?
 }
 
@@ -1800,7 +1793,7 @@ func yaml_emitter_write_double_quoted_scalar(emitter *yaml_emitter_t, value []by
 
 	for i := 0; i < len(value); {
 		if !is_printable(value, i) || (!emitter.unicode && !is_ascii(value, i)) ||
-			is_bom(value, i) || is_break(value, i) ||
+			is_bom(value) || is_break(value, i) ||
 			value[i] == '"' || value[i] == '\\' {
 
 			octet := value[i]

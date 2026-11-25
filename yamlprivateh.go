@@ -38,14 +38,9 @@ const (
 	// The size of the output buffer.
 	output_buffer_size = 128
 
-	// The size of the output raw buffer.
-	// It should be possible to encode the whole output buffer.
-	output_raw_buffer_size = (output_buffer_size*2 + 2)
-
 	// The size of other stacks and queues.
-	initial_stack_size  = 128
-	initial_queue_size  = 128
-	initial_string_size = 16
+	initial_stack_size = 128
+	initial_queue_size = 128
 )
 
 // Check if the character at the specified position is an alphabetical
@@ -107,7 +102,7 @@ func is_z(b []byte, i int) bool {
 }
 
 // Check if the beginning of the buffer is a BOM.
-func is_bom(b []byte, i int) bool {
+func is_bom(b []byte) bool {
 	return b[0] == 0xEF && b[1] == 0xBB && b[2] == 0xBF
 }
 
