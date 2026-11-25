@@ -1,8 +1,10 @@
 fail_on_severity: "low"
 allow_licenses:
   - "MIT"
+  - "MIT-0"
   - "ISC"
   - "MPL-2.0"
   - "BSD-2-Clause"
   - "BSD-3-Clause"
   - "Apache-2.0"
+  - "LicenseRef-scancode-google-patent-license-golang"
